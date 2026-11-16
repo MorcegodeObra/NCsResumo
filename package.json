@@ -1,0 +1,24 @@
+{
+  "name": "nc-resumo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "postinstall": "node scripts/copiar-worker.mjs"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "next": "^14.2.0",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}
