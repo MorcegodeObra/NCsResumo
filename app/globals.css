@@ -127,3 +127,12 @@ main.largo { max-width: 1280px; }
   .cartao { width: 9.6cm; height: 6.2cm; }
   .col.direita .grade { grid-template-columns: repeat(2, 9.6cm); gap: 0.35cm; justify-content: center; }
 }
+
+/* Login */
+.entrar { display:flex; flex-direction:column; gap:6px; max-width:320px; margin-top:12px; }
+.entrar label { font-size:13px; font-weight:700; }
+.entrar input { padding:9px 10px; border:1px solid var(--borda); border-radius:8px; font-size:15px; }
+.entrar button { margin-top:8px; padding:10px 14px; border-radius:8px; border:1px solid #1f3864; background:#1f3864; color:#fff; font-size:15px; cursor:pointer; }
+.entrar button:disabled { opacity:.6; cursor:default; }
+.erro { color:#a40000; margin:4px 0; }
+:focus-visible { outline:3px solid #4a90d9; outline-offset:2px; }

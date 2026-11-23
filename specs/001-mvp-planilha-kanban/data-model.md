@@ -36,7 +36,7 @@ gravadas: são calculadas (ver `research.md` R6).
 | `prazo` | date null | |
 | `data_correcao` | date null | |
 | `situacao_item` | text | Situação mais recente do item (`REPROVADA`, `APROVADA`…), ≤ 40 |
-| `ultima_inspecao` | timestamptz null | |
+| `ultima_inspecao` | timestamp null | Hora local da obra, sem fuso, como vem da planilha |
 | `atualizado_em` | timestamptz | |
 
 Uma NC que some da planilha enquanto o pacote continua nela fica gravada como estava. Na

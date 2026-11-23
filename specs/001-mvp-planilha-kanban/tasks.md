@@ -78,35 +78,35 @@ começar.
 
 ### Banco
 
-- [ ] T013 Criar `db/schema.sql`, idempotente (`CREATE TABLE IF NOT EXISTS`), com as tabelas `pacotes`, `ncs`, `marcacoes`, `comentarios`, `eventos` e `importacoes`, exatamente como em data-model.md:
+- [X] T013 Criar `db/schema.sql`, idempotente (`CREATE TABLE IF NOT EXISTS`), com as tabelas `pacotes`, `ncs`, `marcacoes`, `comentarios`, `eventos` e `importacoes`, exatamente como em data-model.md:
   - PKs `pacotes.codigo`, `ncs.id`, `marcacoes.id_nc`, `comentarios.id`, `eventos.id` e `importacoes.id`.
   - FKs com `ON DELETE CASCADE`: `ncs.codigo_pacote`, `marcacoes.id_nc` e `comentarios.codigo_pacote`.
   - **Sem FK** em `eventos.codigo_pacote`.
   - Colunas que aceitam nulo: `pacotes.saiu_em`, `pacotes.resumo_ia`, `pacotes.resumo_assinatura`, `pacotes.resumo_em`, `ncs.prazo`, `ncs.data_correcao`, `ncs.ultima_inspecao` e `eventos.id_nc`.
   - `CHECK` de `ncs.origem` em (`fvs`, `fiscalizacao`).
   - Índices em `ncs.codigo_pacote` e `eventos.codigo_pacote`.
-- [ ] T014 Escrever `lib/servidor/banco.test.ts`, usando `tests/banco.ts`, que cria um `Banco` em PGlite em memória e aplica `db/schema.sql`. O teste precisa falhar antes da T015: o schema aplica duas vezes sem erro, e `transacao` desfaz tudo quando a função lança erro
-- [ ] T015 Criar `lib/servidor/banco.ts` com `import "server-only"`, a interface `Banco { consulta, transacao }` e a implementação com postgres.js via `DATABASE_URL`. Criar `scripts/migrar.mjs`, que aplica o schema com postgres.js (research.md R2, R3). Implementar até o T014 passar
+- [X] T014 Escrever `lib/servidor/banco.test.ts`, usando `tests/banco.ts`, que cria um `Banco` em PGlite em memória e aplica `db/schema.sql`. O teste precisa falhar antes da T015: o schema aplica duas vezes sem erro, e `transacao` desfaz tudo quando a função lança erro
+- [X] T015 Criar `lib/servidor/banco.ts` com `import "server-only"`, a interface `Banco { consulta, transacao }` e a implementação com postgres.js via `DATABASE_URL`. Criar `scripts/migrar.mjs`, que aplica o schema com postgres.js (research.md R2, R3). Implementar até o T014 passar
 
 ### Validação, HTTP e sessão
 
-- [ ] T016 [P] Escrever `lib/servidor/validar.test.ts`:
+- [X] T016 [P] Escrever `lib/servidor/validar.test.ts`:
   - `str()` corta e normaliza.
   - `autor` tem de 1 a 60 caracteres (data-model.md `marcacoes.autor`, `comentarios.autor`).
   - `texto` de comentário tem de 1 a 1000 caracteres (data-model.md `comentarios.texto`).
   - Lista de ids com limite.
-- [ ] T017 Implementar `lib/servidor/validar.ts`, trazendo `str()` de `lib/llm.ts`
-- [ ] T018 [P] Escrever `lib/servidor/http.test.ts` (status e corpo `{ erro }` de cada caso de `contracts/api.md`; erro inesperado vira 500 sem vazar detalhe interno) e implementar `lib/servidor/http.ts` com `erroResposta` e `respostaErro(status, msg)`
-- [ ] T019 [P] Escrever `lib/servidor/sessao.test.ts`:
+- [X] T017 Implementar `lib/servidor/validar.ts`, trazendo `str()` de `lib/llm.ts`
+- [X] T018 [P] Escrever `lib/servidor/http.test.ts` (status e corpo `{ erro }` de cada caso de `contracts/api.md`; erro inesperado vira 500 sem vazar detalhe interno) e implementar `lib/servidor/http.ts` com `erroResposta` e `respostaErro(status, msg)`
+- [X] T019 [P] Escrever `lib/servidor/sessao.test.ts`:
   - O cookie assinado expira em 12 h.
   - Assinatura adulterada é recusada.
   - `exigirPapel("equipe")` aceita equipe e dono; `exigirPapel("dono")` recusa equipe com 403; sem cookie, 401.
   - `papelDaSenha` compara em tempo constante e só devolve `dono` com `SENHA_DONO`.
   - **Falha fechada**: se `SENHA_EQUIPE`, `SENHA_DONO` ou `SEGREDO_SESSAO` faltarem ou estiverem vazias, se `SEGREDO_SESSAO` tiver menos de 32 caracteres, ou se as duas senhas forem iguais, todo login é recusado com 500 e a mensagem `Acesso não configurado no servidor.`. Uma senha vazia nunca é aceita.
-- [ ] T020 Implementar `lib/servidor/sessao.ts` (HMAC-SHA256 com `node:crypto` e `SEGREDO_SESSAO`, com a falha fechada da T019; research.md R4)
-- [ ] T021 Escrever `app/api/sessao/route.test.ts` (POST com senha certa e errada, cookie HttpOnly/Secure/SameSite=Lax, GET 200 e 401, DELETE) e implementar `app/api/sessao/route.ts` (`contracts/api.md` "Sessão"). Na mesma mudança, documentar no `README.md` o login e as variáveis `SENHA_EQUIPE`, `SENHA_DONO` e `SEGREDO_SESSAO`
-- [ ] T022 [P] Escrever `lib/api.test.ts`, com `fetch` simulado (método, URL e corpo de `entrar`, `sair` e `papel`; uma resposta `{ erro }` vira `ErroApi`, uma subclasse de `Error` com `status` (o código HTTP) e a mensagem do servidor; um 401 chega como `ErroApi` com `status: 401`), e implementar `lib/api.ts`, um cliente `fetch` tipado, que exporta `ErroApi`
-- [ ] T023 Escrever `components/Entrar.test.tsx` (campo de senha com rótulo, erro da senha errada, pede o nome e guarda no `localStorage`) e `app/page.test.tsx` (com `fetch` simulado: sem sessão, `GET /api/sessao` dá 401 e aparece o `<Entrar/>`; com sessão, aparece o placeholder do quadro; depois de entrar, troca para o quadro sem recarregar a página; um `ErroApi` com `status: 401` vindo de qualquer chamada posterior volta para o `<Entrar/>`). Os dois testes precisam falhar antes da implementação. Depois, implementar `components/Entrar.tsx` e trocar o placeholder de `app/page.tsx` por essa lógica. As tarefas que mudarem `app/page.tsx` depois desta (T034) acrescentam casos ao `app/page.test.tsx`
+- [X] T020 Implementar `lib/servidor/sessao.ts` (HMAC-SHA256 com `node:crypto` e `SEGREDO_SESSAO`, com a falha fechada da T019; research.md R4)
+- [X] T021 Escrever `app/api/sessao/route.test.ts` (POST com senha certa e errada, cookie HttpOnly/Secure/SameSite=Lax, GET 200 e 401, DELETE) e implementar `app/api/sessao/route.ts` (`contracts/api.md` "Sessão"). Na mesma mudança, documentar no `README.md` o login e as variáveis `SENHA_EQUIPE`, `SENHA_DONO` e `SEGREDO_SESSAO`
+- [X] T022 [P] Escrever `lib/api.test.ts`, com `fetch` simulado (método, URL e corpo de `entrar`, `sair` e `papel`; uma resposta `{ erro }` vira `ErroApi`, uma subclasse de `Error` com `status` (o código HTTP) e a mensagem do servidor; um 401 chega como `ErroApi` com `status: 401`), e implementar `lib/api.ts`, um cliente `fetch` tipado, que exporta `ErroApi`
+- [X] T023 Escrever `components/Entrar.test.tsx` (campo de senha com rótulo, erro da senha errada, pede o nome e guarda no `localStorage`) e `app/page.test.tsx` (com `fetch` simulado: sem sessão, `GET /api/sessao` dá 401 e aparece o `<Entrar/>`; com sessão, aparece o placeholder do quadro; depois de entrar, troca para o quadro sem recarregar a página; um `ErroApi` com `status: 401` vindo de qualquer chamada posterior volta para o `<Entrar/>`). Os dois testes precisam falhar antes da implementação. Depois, implementar `components/Entrar.tsx` e trocar o placeholder de `app/page.tsx` por essa lógica. As tarefas que mudarem `app/page.tsx` depois desta (T034) acrescentam casos ao `app/page.test.tsx`
 
 **Checkpoint**: `npm test`, `npm run typecheck` e `next build` verdes. O login funciona.
 
