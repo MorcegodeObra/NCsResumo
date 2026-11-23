@@ -46,7 +46,7 @@ começar.
 
 ### Fixture e domínio
 
-- [ ] T005 [P] Criar `tests/fixtures/planilha.ts`. A fixture precisa ter:
+- [X] T005 [P] Criar `tests/fixtures/planilha.ts`. A fixture precisa ter:
   - Linhas **anonimizadas** (empresas, pessoas e CNPJ fictícios), com as 29 colunas de `contracts/planilha.md`.
   - A linha 1 vazia e o cabeçalho na linha 2.
   - Uma NC com 3 reinspeções.
@@ -57,24 +57,24 @@ começar.
   - Um pacote só de FVS e uma NC com `Data Real Correção`.
 
   Exportar `gerarXlsx(linhas): ArrayBuffer`, que monta o arquivo com SheetJS na memória (research.md R9).
-- [ ] T006 [P] Criar `lib/dominio/tipos.ts` com os tipos `Origem`, `SituacaoNC`, `Coluna`, `PacoteImportado`, `NCImportada`, `LinhaCard` e `PacoteVisao`, conforme `contracts/api.md` e os campos de `data-model.md` (`pacotes.*`, `ncs.*`)
-- [ ] T007 [P] Escrever `lib/dominio/normalizar.test.ts`:
+- [X] T006 [P] Criar `lib/dominio/tipos.ts` com os tipos `Origem`, `SituacaoNC`, `Coluna`, `PacoteImportado`, `NCImportada`, `LinhaCard` e `PacoteVisao`, conforme `contracts/api.md` e os campos de `data-model.md` (`pacotes.*`, `ncs.*`)
+- [X] T007 [P] Escrever `lib/dominio/normalizar.test.ts`:
   - Todos os exemplos da tabela "Formatação para o card" de `contracts/planilha.md` (serviço, pavimento, empresa, item, sublocal).
   - Texto: espaços repetidos e `.` vira vazio.
   - Datas `dd/mm/aaaa` e `dd/mm/aaaa hh:mm:ss` (para `aaaa-mm-dd` e ISO); data inválida vira `null`.
   - Origem por `Descrição FVS`, sem diferenciar maiúsculas e acentos.
-- [ ] T008 Implementar `lib/dominio/normalizar.ts` até o T007 passar
-- [ ] T009 [P] Escrever `lib/dominio/agrupar.test.ts`:
+- [X] T008 Implementar `lib/dominio/normalizar.ts` até o T007 passar
+- [X] T009 [P] Escrever `lib/dominio/agrupar.test.ts`:
   - `juntarLocais`: `AP 1-2-3`, `HALL A-B`, `HALL A` sozinho e outros locais na ordem, sem repetir.
   - `menorPrazo`.
   - `linhasLocais`: agrupa sem diferenciar acentos e maiúsculas, ordena do maior grupo para o menor, `×n` só quando n > 1, sem limite de linhas, e cada linha traz os ids das NCs.
   - O card de referência do pacote 144683 de `contracts/planilha.md`, reproduzido com a fixture.
-- [ ] T010 Implementar `lib/dominio/agrupar.ts`, trazendo `juntarLocais`, `menorPrazo` e `NOME_ORIGEM` de `lib/agrupar.ts` e acrescentando os halls e `linhasLocais`. Apagar `lib/agrupar.ts`, `lib/types.ts` e `lib/exportar.ts`. O exportar é refeito na US4, a partir de `git show d796c86:lib/exportar.ts`
-- [ ] T011 [P] Escrever `lib/dominio/situacao.test.ts`:
+- [X] T010 Implementar `lib/dominio/agrupar.ts`, trazendo `juntarLocais`, `menorPrazo` e `NOME_ORIGEM` de `lib/agrupar.ts` e acrescentando os halls e `linhasLocais`. Apagar `lib/agrupar.ts`, `lib/types.ts` e `lib/exportar.ts`. O exportar é refeito na US4, a partir de `git show d796c86:lib/exportar.ts`
+- [X] T011 [P] Escrever `lib/dominio/situacao.test.ts`:
   - `situacaoNC`: Concluída quando o item não está `REPROVADA`, Corrigida por `data_correcao` ou por marcação, Aberta nos demais casos.
   - `ncsVisiveis`: filtro de fiscalização sobre as não concluídas.
   - `colunaDoPacote`: `saiu_em`, sem NC visível, Aberto e Corrigido (data-model.md "Regras calculadas").
-- [ ] T012 Implementar `lib/dominio/situacao.ts` até o T011 passar
+- [X] T012 Implementar `lib/dominio/situacao.ts` até o T011 passar
 
 ### Banco
 
