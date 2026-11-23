@@ -25,6 +25,13 @@ describe("página inicial", () => {
     expect(screen.queryByLabelText("Senha")).toBeNull();
   });
 
+  it("com sessão, o Quadro aparece no lugar do placeholder (com a importação)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { papel: "equipe" })));
+    render(<Pagina />);
+    expect(await screen.findByLabelText(/Planilha de inspeções/)).toBeTruthy();
+    expect(screen.queryByText(/Em construção/)).toBeNull();
+  });
+
   it("depois de entrar, troca para o quadro sem recarregar", async () => {
     vi.stubGlobal(
       "fetch",

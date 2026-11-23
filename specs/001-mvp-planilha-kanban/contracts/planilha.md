@@ -19,8 +19,12 @@ Travado por `lib/planilha/ler.test.ts` e `lib/planilha/importar.test.ts`.
 `Descrição Problema`, `Ações Tomadas`, `Data Prevista Correção`, `Data Real Correção`,
 `Equipe(s)`, `Colaborador NC`.
 
-- Se faltar coluna, a importação é recusada inteira, com
-  `Falta a coluna "<nome>" na planilha.` (todas as que faltarem, separadas por vírgula).
+- Se faltar coluna, a importação é recusada inteira, com `Falta a coluna "<nome>" na planilha.`
+  Se faltarem várias: `Faltam as colunas "<a>", "<b>" na planilha.`
+- Se nenhuma linha tiver `Código Pacote`: `A aba "Base de Dados de Inspeções" não tem a linha de
+  cabeçalho (com "Código Pacote").`
+- Se o arquivo não puder ser lido: `O arquivo não é uma planilha .xlsx.` (um arquivo de texto
+  pode ser lido como planilha sem a aba; aí vale a mensagem da aba).
   Colunas a mais são ignoradas.
 
 ## Linhas

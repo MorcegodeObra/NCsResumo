@@ -118,31 +118,31 @@ começar.
 
 **Independent Test**: importar o `.xlsx` gerado pela fixture e conferir cards, grupos, locais, contagens e o card de referência. Importar uma planilha sem `Sublocal` e ver a mensagem de recusa.
 
-- [ ] T024 [P] [US1] Escrever `lib/planilha/ler.test.ts` (o contrato de `contracts/planilha.md` "Arquivo" e "Linhas"):
+- [X] T024 [P] [US1] Escrever `lib/planilha/ler.test.ts` (o contrato de `contracts/planilha.md` "Arquivo" e "Linhas"):
   - Sem a aba, a mensagem exata.
   - O cabeçalho é procurado.
   - Faltando colunas, a mensagem com **todas** as que faltam.
   - Colunas a mais são ignoradas; a ordem das colunas não importa.
   - Linhas vazias e o rodapé são descartados.
-- [ ] T025 [US1] Implementar `lib/planilha/ler.ts` com SheetJS (`read` + `sheet_to_json(ws, { header: 1, raw: false, defval: "" })`), devolvendo as linhas como objetos indexados pelo nome da coluna
-- [ ] T026 [P] [US1] Escrever `lib/planilha/importar.test.ts`:
+- [X] T025 [US1] Implementar `lib/planilha/ler.ts` com SheetJS (`read` + `sheet_to_json(ws, { header: 1, raw: false, defval: "" })`), devolvendo as linhas como objetos indexados pelo nome da coluna
+- [X] T026 [P] [US1] Escrever `lib/planilha/importar.test.ts`:
   - Cada NC vira um registro.
   - A situação do item vem da inspeção mais recente, contando também as linhas sem NC; no empate, vale o maior `Identificador Histórico Item`.
   - Item sem data não conta.
   - Os campos já vêm formatados (normalizar).
   - `equipes` é juntado por pacote.
   - A saída tem **só** os campos de research.md R5. Um teste confirma que `Usuário Inspeção`, `Colaborador NC`, `Endereço` e `Ações Tomadas` não aparecem em nenhum valor.
-- [ ] T027 [US1] Implementar `lib/planilha/importar.ts` (`linhas → { pacotes: PacoteImportado[], ncs: NCImportada[] }`), com os campos de data-model.md `pacotes.codigo`, `pacotes.tarefa`, `pacotes.bloco`, `pacotes.pavimento`, `pacotes.equipes`, `ncs.id`, `ncs.codigo_pacote`, `ncs.id_item`, `ncs.item`, `ncs.origem`, `ncs.tipo`, `ncs.descricao`, `ncs.sublocal`, `ncs.prazo`, `ncs.data_correcao`, `ncs.situacao_item` e `ncs.ultima_inspecao`
-- [ ] T028 [P] [US1] Escrever `lib/dominio/visao.test.ts`: `montarVisao(pacote, ncs, { marcacoes, comentarios, resumo })` devolve um `PacoteVisao` com a coluna, a origem e o prazo das NCs visíveis, e as linhas locais. Usa o pacote 144683 da fixture: 18 FVS escondidas
-- [ ] T029 [US1] Implementar `lib/dominio/visao.ts` (por enquanto `resumo` é ignorado; a US5 completa)
-- [ ] T030 [P] [US1] Escrever `components/CartaoPacote.test.tsx`:
+- [X] T027 [US1] Implementar `lib/planilha/importar.ts` (`linhas → { pacotes: PacoteImportado[], ncs: NCImportada[] }`), com os campos de data-model.md `pacotes.codigo`, `pacotes.tarefa`, `pacotes.bloco`, `pacotes.pavimento`, `pacotes.equipes`, `ncs.id`, `ncs.codigo_pacote`, `ncs.id_item`, `ncs.item`, `ncs.origem`, `ncs.tipo`, `ncs.descricao`, `ncs.sublocal`, `ncs.prazo`, `ncs.data_correcao`, `ncs.situacao_item` e `ncs.ultima_inspecao`
+- [X] T028 [P] [US1] Escrever `lib/dominio/visao.test.ts`: `montarVisao(pacote, ncs, { marcacoes, comentarios, resumo })` devolve um `PacoteVisao` com a coluna, a origem e o prazo das NCs visíveis, e as linhas locais. Usa o pacote 144683 da fixture: 18 FVS escondidas
+- [X] T029 [US1] Implementar `lib/dominio/visao.ts` (por enquanto `resumo` é ignorado; a US5 completa)
+- [X] T030 [P] [US1] Escrever `components/CartaoPacote.test.tsx`:
   - Faixa `ORIGEM | EMPRESA`, título `bloco · pavimento`, serviço, linhas, `PRAZO` e a situação do pacote (a coluna: Aberto, Corrigido ou Concluído, FR-007).
   - Cada grupo é um botão com `aria-expanded` que mostra as NCs (tipo e descrição).
   - Não há limite de linhas.
-- [ ] T031 [US1] Implementar `components/CartaoPacote.tsx` e o CSS em `app/globals.css`: largura fixa (FR-009), altura livre, quebra de texto, sem rolagem horizontal a partir de 360 px
-- [ ] T032 [P] [US1] Escrever `components/Importar.test.tsx`: `input type=file` com rótulo e `accept=".xlsx"`; o estado "lendo…"; a mensagem do contrato quando a planilha é recusada; `onLido(payload)` com o resultado
-- [ ] T033 [US1] Implementar `components/Importar.tsx` (chama `lerPlanilha` e `importar`; o arquivo não vai a lugar nenhum)
-- [ ] T034 [US1] Escrever `components/Quadro.test.tsx` (depois do `Importar`, um card por pacote, montado com `montarVisao`) e implementar `components/Quadro.tsx` (primeira versão), ligado em `app/page.tsx`, com um caso novo em `app/page.test.tsx` (com sessão, o `Quadro` aparece no lugar do placeholder). Na mesma mudança, documentar no `README.md` a importação da planilha (o arquivo não sai do navegador)
+- [X] T031 [US1] Implementar `components/CartaoPacote.tsx` e o CSS em `app/globals.css`: largura fixa (FR-009), altura livre, quebra de texto, sem rolagem horizontal a partir de 360 px
+- [X] T032 [P] [US1] Escrever `components/Importar.test.tsx`: `input type=file` com rótulo e `accept=".xlsx"`; o estado "lendo…"; a mensagem do contrato quando a planilha é recusada; `onLido(payload)` com o resultado
+- [X] T033 [US1] Implementar `components/Importar.tsx` (chama `lerPlanilha` e `importar`; o arquivo não vai a lugar nenhum)
+- [X] T034 [US1] Escrever `components/Quadro.test.tsx` (depois do `Importar`, um card por pacote, montado com `montarVisao`) e implementar `components/Quadro.tsx` (primeira versão), ligado em `app/page.tsx`, com um caso novo em `app/page.test.tsx` (com sessão, o `Quadro` aparece no lugar do placeholder). Na mesma mudança, documentar no `README.md` a importação da planilha (o arquivo não sai do navegador)
 
 **Checkpoint**: a US1 funciona sozinha. Importar a planilha real localmente e conferir o card 144683.
 

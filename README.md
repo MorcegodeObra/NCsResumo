@@ -6,6 +6,19 @@ Site para acompanhar as não conformidades (NCs) da obra a partir da planilha di
 > "Base de Dados de Inspeções" exportada pelo sistema de inspeção e mostra os pacotes num kanban
 > (Aberto → Corrigido → Concluído). A especificação está em `specs/001-mvp-planilha-kanban/`.
 
+## Importar a planilha
+
+1. Exporte do sistema de inspeção a planilha **"Base de Dados de Inspeções"** (`.xlsx`).
+2. No site, entre com a senha e escolha o arquivo em **Planilha de inspeções (.xlsx)**.
+3. Aparece um card por pacote, com os problemas agrupados por item de inspeção, os locais e a
+   contagem (ex.: "Esquadro entre alvenarias (AP 1-2-3, HALL A-B) ×19"). Toque numa linha para ver
+   as NCs dela.
+
+**O arquivo é lido no seu aparelho e não sai dele.** Se faltar alguma das 29 colunas, a
+importação é recusada inteira, com o nome da coluna que falta. Quando um pacote tem NC de
+fiscalização aberta, o card mostra só as de fiscalização; as de FVS aparecem quando a
+fiscalização termina.
+
 ## Acesso
 
 Há dois níveis, verificados no servidor:
@@ -41,6 +54,12 @@ commite o `.env.local`.**
 ## Estrutura
 
 ```
-app/        páginas e rotas da API (Next.js App Router)
-specs/      especificação, plano e tarefas (Spec Kit)
+app/              páginas e rotas da API (Next.js App Router)
+components/       interface (cards, kanban, importação, login)
+lib/dominio/      regras puras: normalização, situação, agrupamento (interface e servidor)
+lib/planilha/     leitura da planilha, só no navegador
+lib/servidor/     banco, sessão e validação, só no servidor
+db/schema.sql     tabelas do banco
+tests/fixtures/   planilha fictícia usada nos testes
+specs/            especificação, plano e tarefas (Spec Kit)
 ```

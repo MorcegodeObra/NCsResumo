@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Entrar from "@/components/Entrar";
+import Quadro from "@/components/Quadro";
 import { papel as lerPapel, quandoSessaoExpirar } from "@/lib/api";
 import type { Papel } from "@/lib/dominio/tipos";
 
@@ -22,9 +23,7 @@ export default function Pagina() {
       ) : papel === null ? (
         <Entrar onEntrou={setPapel} />
       ) : (
-        <section data-testid="quadro">
-          <p className="aviso">Em construção: a importação da planilha está chegando.</p>
-        </section>
+        <Quadro papel={papel} />
       )}
     </main>
   );
