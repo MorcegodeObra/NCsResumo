@@ -25,9 +25,9 @@ O envio de PDF sai e entra a importação da planilha "Base de Dados de Inspeç�
 **Language/Version**: TypeScript 5, Node 20 (Vercel)
 
 **Primary Dependencies**:
-- Já existentes: Next.js 14.2 (App Router, atualizar para o último patch 14.2.x), React 18.
+- Atualizadas na T002: Next.js 16 (App Router) e React 19. O Next 14.2 tem vulnerabilidades críticas sem correção nessa linha; decisão do dono em 2026-11-23.
 - Novas em produção: SheetJS CE `xlsx` (pelo CDN oficial), `postgres` (postgres.js) e `server-only`.
-- Novas em desenvolvimento: `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/dom`
+- Novas em desenvolvimento (`@types/node` sobe para 22, exigido pelo Vitest 5): `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/dom`
   e `@electric-sql/pglite`.
 - Removidas: `pdfjs-dist` e `jszip`.
 

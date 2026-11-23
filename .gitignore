@@ -1,9 +1,11 @@
 node_modules
 .next
-.env
-.env.local
-public/pdf.worker.min.mjs
+.env*
+!.env.example
 next-env.d.ts
 *.tsbuildinfo
 *.xlsx
 *.pdf
+*.log
+coverage/
+.DS_Store

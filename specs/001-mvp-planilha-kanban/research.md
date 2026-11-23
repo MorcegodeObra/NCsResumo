@@ -153,5 +153,7 @@ item.
   `menorPrazo`). O agrupamento local deixa de cortar em 3 linhas, porque o card agora tem altura
   variável. `app/page.tsx`, com 344 linhas, é substituído por componentes pequenos.
 - **Rationale**: FR-027, FR-028 e SC-008.
-- Também atualizar o Next para o último 14.2.x, só como patch de segurança, sem mudar de versão
-  principal.
+- **Atualizado na implementação (T002)**: o `npm audit` mostrou vulnerabilidades críticas no Next
+  14.2.35, que só têm correção a partir do Next 16. Como quase todo o código é reescrito nesta
+  feature, o dono decidiu migrar para o Next 16 e o React 19 já na T002. As rotas dinâmicas usam
+  `params` assíncrono (`await params`).

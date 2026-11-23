@@ -26,15 +26,15 @@ começar.
 
 **Purpose**: tirar o PDF e preparar dependências e ferramenta de teste.
 
-- [ ] T001 Remover o fluxo de PDF: apagar `lib/pdf.ts`, `lib/pdfjs.d.ts`, `lib/classify.ts`, `lib/extrairLocal.ts`, `scripts/copiar-worker.mjs`, `public/pdf.worker.min.mjs`, `app/api/resumir/` e `components/CartaoNC.tsx`. Trocar `app/page.tsx` por um placeholder ("Em construção"). Tirar a linha `public/pdf.worker.min.mjs` do `.gitignore` (research.md R10). Na mesma mudança, atualizar o `README.md`: o envio de PDF saiu e a nova versão, com a planilha, está em construção (regra do README da constituição)
-- [ ] T002 Atualizar `package.json`:
+- [X] T001 Remover o fluxo de PDF: apagar `lib/pdf.ts`, `lib/pdfjs.d.ts`, `lib/classify.ts`, `lib/extrairLocal.ts`, `scripts/copiar-worker.mjs`, `public/pdf.worker.min.mjs`, `app/api/resumir/` e `components/CartaoNC.tsx`. Trocar `app/page.tsx` por um placeholder ("Em construção"). Tirar a linha `public/pdf.worker.min.mjs` do `.gitignore` (research.md R10). Na mesma mudança, atualizar o `README.md`: o envio de PDF saiu e a nova versão, com a planilha, está em construção (regra do README da constituição)
+- [X] T002 Atualizar `package.json`:
   - Remover `pdfjs-dist`, `jszip` e o script `postinstall`.
   - Instalar `xlsx`, pelo tarball do CDN oficial da SheetJS (versão ≥ 0.20.3), `postgres` e `server-only`.
   - Instalar como dependências de desenvolvimento `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/dom` e `@electric-sql/pglite`.
-  - Atualizar `next` para o último 14.2.x.
+  - Atualizar `next` para o 16 e `react`/`react-dom` para o 19 (o 14.2 tem vulnerabilidades críticas sem correção; decisão do dono). `@types/node` sobe para 22, exigido pelo Vitest 5.
   - Criar os scripts `test` (`vitest run`), `typecheck` (`tsc --noEmit`) e `db:migrar` (`node scripts/migrar.mjs`).
-- [ ] T003 [P] Criar `vitest.config.ts` com `environment: "node"`, alias `@` para a raiz e `include: ["**/*.test.ts", "**/*.test.tsx"]`, sem `node_modules` e `.next`. Os testes de componente usam `// @vitest-environment jsdom` no próprio arquivo
-- [ ] T004 [P] Reescrever `.env.example` com `DATABASE_URL`, `SENHA_EQUIPE`, `SENHA_DONO`, `SEGREDO_SESSAO`, `LLM_API_KEY`, `LLM_BASE_URL` e `LLM_MODEL`, e tirar `SITE_PASSWORD` (quickstart.md)
+- [X] T003 [P] Criar `vitest.config.ts` com `environment: "node"`, alias `@` para a raiz e `include: ["**/*.test.ts", "**/*.test.tsx"]`, sem `node_modules` e `.next`. Os testes de componente usam `// @vitest-environment jsdom` no próprio arquivo
+- [X] T004 [P] Reescrever `.env.example` com `DATABASE_URL`, `SENHA_EQUIPE`, `SENHA_DONO`, `SEGREDO_SESSAO`, `LLM_API_KEY`, `LLM_BASE_URL` e `LLM_MODEL`, e tirar `SITE_PASSWORD` (quickstart.md)
 
 ---
 
