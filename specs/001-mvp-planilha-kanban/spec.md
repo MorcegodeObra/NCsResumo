@@ -43,7 +43,7 @@ Amostra analisada: `BaseDeDadosInspecoes_45138.xlsx` (não versionada; ignorada 
 ### User Story 1 - Importar a planilha e ver os cards por pacote (Priority: P1)
 
 Uma pessoa da equipe entra no site, escolhe a planilha exportada do sistema de inspeção e vê um
-card por pacote, com tarefa, bloco, pavimento, equipe, prazo mais próximo e os problemas
+card por pacote, com tarefa, bloco, pavimento, empresa, prazo mais próximo e os problemas
 agrupados por item de inspeção, com locais e contagem. O arquivo é lido no próprio aparelho.
 
 **Why this priority**: troca os PDFs pela fonte oficial e entrega o resumo que a equipe usa no quadro.
@@ -175,7 +175,7 @@ resultado; simular falha da IA e conferir que o card mantém o resumo local.
 
 **Card**
 
-- **FR-007**: O sistema MUST mostrar um card por pacote com tarefa, bloco (`Etapa`), pavimento (`Local`), equipe, prazo mais próximo e situação.
+- **FR-007**: O sistema MUST mostrar um card por pacote com tarefa, bloco (`Etapa`), pavimento (`Local`), empresa (`Equipe(s)`), prazo mais próximo e situação. Neste documento, "equipe" é sempre o grupo de usuários do site; a coluna `Equipe(s)` aparece no card como EMPRESA.
 - **FR-008**: O card MUST agrupar as NCs não concluídas por item de inspeção, com os locais (`Sublocal`) e a contagem, e cada grupo MUST poder ser expandido para mostrar a lista de NCs.
 - **FR-009**: O card MUST ter largura fixa e altura variável, mostrando o resumo completo sem cortar linhas.
 
@@ -221,7 +221,7 @@ resultado; simular falha da IA e conferir que o card mantém o resumo local.
 
 ### Key Entities
 
-- **Pacote**: identificado pelo `Código Pacote`. Tem tarefa, bloco, pavimento, equipe, prazo mais próximo, coluna do kanban, data de saída (se saiu da planilha) e o resumo da IA (se houver).
+- **Pacote**: identificado pelo `Código Pacote`. Tem tarefa, bloco, pavimento, empresa (`Equipe(s)`), prazo mais próximo, coluna do kanban, data de saída (se saiu da planilha) e o resumo da IA (se houver).
 - **Item de inspeção**: identificado pelo `Identificador Vínculo Item`, pertence a um pacote. Tem a descrição e a situação da inspeção mais recente.
 - **NC**: identificada pelo `Identificador Vínculo Problema`, pertence a um item. Tem tipo, descrição do problema, sublocal, origem (FVS ou fiscalização), prazo, data real de correção e situação.
 - **Marcação**: acréscimo da equipe sobre uma NC ou um pacote (corrigida, comentário), com autor e data e hora. A importação nunca a sobrescreve.
@@ -233,7 +233,7 @@ resultado; simular falha da IA e conferir que o card mantém o resumo local.
 
 ### Measurable Outcomes
 
-- **SC-001**: Com a planilha do dia (cerca de 6.300 linhas úteis, 73 pacotes e 1.006 NCs, como a amostra), a pessoa vê o kanban atualizado em menos de 1 minuto, num celular comum.
+- **SC-001**: Com a planilha do dia (cerca de 6.300 linhas úteis, 73 pacotes e 1.006 NCs, como a amostra), a pessoa vê o kanban atualizado em menos de 1 minuto, no celular usado na obra.
 - **SC-002**: Em 100% dos casos de teste de regressão, cada NC aparece uma vez só e na situação certa.
 - **SC-003**: Reimportar a mesma planilha 5 vezes seguidas não muda nenhum card nem apaga nenhuma marcação.
 - **SC-004**: O arquivo da planilha nunca chega ao servidor, o que dá para conferir inspecionando o que o site envia durante a importação.
