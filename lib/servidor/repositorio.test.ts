@@ -4,7 +4,8 @@ import { gerarXlsx } from "@/tests/fixtures/planilha";
 import { lerPlanilha } from "@/lib/planilha/ler";
 import { importar as lerCarga } from "@/lib/planilha/importar";
 import type { CargaImportacao } from "@/lib/dominio/tipos";
-import { comentar, desmarcar, historico, importar, listarPacotes, marcar } from "./repositorio";
+import { assinatura } from "@/lib/dominio/assinatura";
+import { buscarPacote, comentar, desmarcar, excluirPacote, historico, importar, listarPacotes, marcar, salvarResumo } from "./repositorio";
 
 let banco: Awaited<ReturnType<typeof bancoDeTeste>>;
 beforeEach(async () => (banco = await bancoDeTeste()));
@@ -209,5 +210,60 @@ describe("comentar e historico", () => {
 
   it("pacote sem nenhum evento dá 404", async () => {
     await expect(historico(banco, "777")).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("salvarResumo", () => {
+  beforeEach(async () => void (await importar(banco, "Maria", dia1())));
+  const resumir = async () => {
+    const { ncs } = await buscarPacote(banco, "100001");
+    return salvarResumo(banco, "100001", [{ texto: "Tudo torto", ncs: ncs.map((n) => n.id) }], assinatura(ncs));
+  };
+
+  it("grava o resumo, o evento com autor dono e aparece para todos", async () => {
+    const p = await resumir();
+    expect(p).toMatchObject({ resumoIA: true, linhas: [{ texto: "Tudo torto (AP 1-2-8, HALL A-B) ×5" }] });
+    expect((await listarPacotes(banco)).map((x) => x.resumoIA)).toEqual([true, false]);
+    expect((await historico(banco, "100001"))[0]).toMatchObject({ tipo: "resumo_ia_gerado", autor: "dono", detalhe: { linhas: 1 } });
+    const [l] = await banco.consulta<{ ok: boolean }>("SELECT resumo_em IS NOT NULL AS ok FROM pacotes WHERE codigo = '100001'");
+    expect(l.ok).toBe(true);
+  });
+
+  it("marcar e reimportar a mesma carga mantêm o resumo; NC concluída o invalida", async () => {
+    await resumir();
+    expect((await marcar(banco, "100001", "Ana", ["9001"])).resumoIA).toBe(true);
+    await importar(banco, "Maria", dia1());
+    expect((await buscarPacote(banco, "100001")).resumoIA).toBe(true);
+    await importar(banco, "Maria", dia2());
+    expect((await buscarPacote(banco, "100001")).resumoIA).toBe(false);
+  });
+
+  it("pacote inexistente: 404 e nenhum evento", async () => {
+    await expect(salvarResumo(banco, "777", [], "x")).rejects.toMatchObject({ status: 404 });
+    expect((await eventos()).some((e) => e.tipo === "resumo_ia_gerado")).toBe(false);
+  });
+});
+
+describe("excluirPacote", () => {
+  beforeEach(async () => void (await importar(banco, "Maria", dia1())));
+
+  it("apaga pacote, NCs, marcações e comentários; o histórico fica, com o que foi apagado", async () => {
+    await marcar(banco, "100002", "Ana", ["9102"]);
+    await comentar(banco, "100002", "Ana", "feito");
+    await excluirPacote(banco, "100002");
+    expect((await listarPacotes(banco)).map((p) => p.codigo)).toEqual(["100001"]);
+    for (const t of ["ncs", "comentarios"])
+      expect(await banco.consulta(`SELECT 1 FROM ${t} WHERE codigo_pacote = '100002'`)).toEqual([]);
+    expect(await banco.consulta("SELECT * FROM marcacoes")).toEqual([]);
+    const h = await historico(banco, "100002");
+    expect(h[0]).toMatchObject({
+      tipo: "pacote_excluido", autor: "dono",
+      detalhe: { tarefa: "Alvenaria", bloco: "Bloco 2", pavimento: "TÉRREO", ncs: 7, marcacoes: 1, comentarios: 1 },
+    });
+    expect(h.some((e) => e.tipo === "nc_marcada")).toBe(true);
+  });
+
+  it("pacote inexistente: 404", async () => {
+    await expect(excluirPacote(banco, "777")).rejects.toMatchObject({ status: 404 });
   });
 });

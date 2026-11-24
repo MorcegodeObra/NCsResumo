@@ -78,5 +78,7 @@ button, input, textarea { font: inherit; }
 @media print {
   body { background:#fff; }
   main { padding:0; }
-  .no-print { display:none !important; }
+  h1, .coluna > h2, .coluna.concluido, .no-print { display:none !important; }
+  .kanban, .cards { display:block; }
+  .cartao { width:var(--largura-card); margin:0 0 12px; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
 }

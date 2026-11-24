@@ -2,9 +2,7 @@
 
 Site para acompanhar as não conformidades (NCs) da obra a partir da planilha diária de inspeções.
 
-> **Em construção.** O envio de PDF das fichas foi removido. Já funcionam a importação da
-> planilha, o kanban, as marcações e os comentários; exportação e IA estão chegando. A especificação está em
-> `specs/001-mvp-planilha-kanban/`.
+A especificação está em `specs/001-mvp-planilha-kanban/`.
 
 ## Importar a planilha
 
@@ -43,6 +41,25 @@ local, o prazo, a data real de correção e a situação e a data da inspeção 
 endereço, as ações tomadas, nem os itens sem NC. Além disso vão o nome que a pessoa informou, para
 o histórico, e os comentários que ela escrever.
 
+## Exportar
+
+Os botões do quadro usam só os pacotes de Aberto e Corrigido:
+
+- **Copiar texto**: os cards em texto, para o WhatsApp.
+- **Baixar CSV**: colunas B a K da aba NCs da planilha de controle; cole a partir de **B2**.
+- **Imprimir**: os cards, sem os botões.
+
+## Só o dono: IA e exclusão
+
+- **Resumir com IA** (um card) e **Resumir todos** (um por vez) juntam itens parecidos em menos linhas.
+  Os locais e as contagens são calculados pelo servidor, e o resumo que deixar alguma NC de fora é
+  recusado. O resumo fica gravado para todos, com o selo **IA**, e deixa de valer quando as NCs do
+  card mudam. Se a IA falhar ou não estiver configurada, o card não muda e aparece um aviso.
+- **Vai para a IA** só: o serviço do pacote e, de cada NC (até 300), um número curto, o item, a
+  descrição e o local. Empresa, bloco, pavimento, prazos e nomes não vão.
+- **Excluir** apaga de vez o pacote, as NCs, as marcações e os comentários dele. O histórico fica. Se
+  o pacote ainda estiver na planilha, a próxima importação o traz de volta como novo.
+
 ## Acesso
 
 Há dois níveis, verificados no servidor:
@@ -73,6 +90,9 @@ npm test                     # testes (Vitest)
 | `SENHA_EQUIPE` | Senha da equipe |
 | `SENHA_DONO` | Senha do dono (diferente da da equipe) |
 | `SEGREDO_SESSAO` | Assina o cookie de sessão; 32+ caracteres aleatórios (`openssl rand -base64 48`) |
+| `LLM_API_KEY` | Chave da IA do dono (opcional) |
+| `LLM_BASE_URL` | API compatível com a da OpenAI (opcional; padrão: Groq) |
+| `LLM_MODEL` | Modelo (opcional; padrão: `openai/gpt-oss-120b`) |
 
 No Vercel, crie o banco pelo marketplace (**Storage → Neon**) e ligue ao projeto: isso cria a
 `DATABASE_URL`. Rode `npm run db:migrar` com essa URL uma vez (e de novo sempre que o
@@ -84,10 +104,10 @@ commite o `.env.local`.**
 
 ```
 app/              páginas e rotas da API (Next.js App Router)
-components/       interface (cards, kanban, importação, login)
+components/       interface (cards, kanban, importação, exportação, login)
 lib/dominio/      regras puras: normalização, situação, agrupamento (interface e servidor)
 lib/planilha/     leitura da planilha, só no navegador
-lib/servidor/     banco, sessão e validação, só no servidor
+lib/servidor/     banco, sessão, validação e IA, só no servidor
 db/schema.sql     tabelas do banco
 tests/fixtures/   planilha fictícia usada nos testes
 specs/            especificação, plano e tarefas (Spec Kit)

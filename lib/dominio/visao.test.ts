@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { gerarXlsx } from "@/tests/fixtures/planilha";
 import { lerPlanilha } from "@/lib/planilha/ler";
 import { importar } from "@/lib/planilha/importar";
+import { assinatura } from "./assinatura";
 import { montarVisao } from "./visao";
 
 const carga = importar(lerPlanilha(gerarXlsx()));
@@ -52,5 +53,20 @@ describe("montarVisao", () => {
   it("repassa os comentários", () => {
     const comentarios = [{ autor: "Ana", texto: "feito", em: "2026-11-20T10:00:00Z" }];
     expect(visao("100001", { comentarios }).comentarios).toEqual(comentarios);
+  });
+
+  it("resumo da IA com a assinatura das NCs visíveis: linhas com locais e contagem calculados", () => {
+    const { ncs } = visao("100001");
+    const linhas = [{ texto: "Alvenaria fora de esquadro e de plano", ncs: ncs.map((n) => n.id) }];
+    const v = visao("100001", { resumo: { linhas, assinatura: assinatura(ncs) } });
+    expect(v.resumoIA).toBe(true);
+    expect(v.linhas).toEqual([{ texto: "Alvenaria fora de esquadro e de plano (AP 1-2-8, HALL A-B) ×5", ncs: ncs.map((n) => n.id) }]);
+  });
+
+  it("resumo com assinatura velha ou ausente: linhas locais", () => {
+    const local = visao("100001");
+    const linhas = [{ texto: "x", ncs: ["9001"] }];
+    expect(visao("100001", { resumo: { linhas, assinatura: assinatura(local.ncs.slice(1)) } })).toEqual(local);
+    expect(visao("100001", { resumo: null })).toEqual(local);
   });
 });

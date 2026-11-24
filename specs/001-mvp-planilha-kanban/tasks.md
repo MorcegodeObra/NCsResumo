@@ -222,13 +222,13 @@ começar.
 
 **Independent Test**: com a carga da fixture, o CSV bate coluna a coluna com `contracts/exportacao.md`.
 
-- [ ] T053 [P] [US4] Escrever `lib/exportar.test.ts`:
+- [X] T053 [P] [US4] Escrever `lib/exportar.test.ts`:
   - CSV com BOM, `;`, CRLF, aspas, cabeçalho e as colunas B a K mapeadas como em `contracts/exportacao.md`.
   - Bloco sem o prefixo "Bloco ", prazo em `dd/mm/aaaa` e resumo com quebra de linha.
   - Só os pacotes de Aberto e Corrigido.
   - Texto no formato do `cartaoParaTexto`.
-- [ ] T054 [US4] Reimplementar `lib/exportar.ts` sobre `PacoteVisao`, a partir de `git show d796c86:lib/exportar.ts` (`cartaoParaTexto`, `cartoesParaTexto`, `cartoesParaCSV`, `baixar`)
-- [ ] T055 [US4] Escrever `components/Exportar.test.tsx` e implementar `components/Exportar.tsx` (botões com rótulo "Copiar texto", "Baixar CSV" e "Imprimir"), ligado ao `Quadro`. Acrescentar `@media print` em `app/globals.css` (só os cards de Aberto e Corrigido, sem a barra nem os botões). Na mesma mudança, documentar no `README.md` a exportação (texto, CSV colado a partir de B2 e impressão)
+- [X] T054 [US4] Reimplementar `lib/exportar.ts` sobre `PacoteVisao`, a partir de `git show d796c86:lib/exportar.ts` (`cartaoParaTexto`, `cartoesParaTexto`, `cartoesParaCSV`, `baixar`)
+- [X] T055 [US4] Escrever `components/Exportar.test.tsx` e implementar `components/Exportar.tsx` (botões com rótulo "Copiar texto", "Baixar CSV" e "Imprimir"), ligado ao `Quadro`. Acrescentar `@media print` em `app/globals.css` (só os cards de Aberto e Corrigido, sem a barra nem os botões). Na mesma mudança, documentar no `README.md` a exportação (texto, CSV colado a partir de B2 e impressão)
 - [ ] T056 [US4] Conferir o CSV com a planilha de controle real (aba NCs, a partir de B2). Se divergir, corrigir `contracts/exportacao.md` e o T053 **antes** do código. Precisa que o dono forneça a planilha de controle
 
 **Checkpoint**: US1 a US4. Quickstart, cenário 7.
@@ -241,18 +241,18 @@ começar.
 
 **Independent Test**: com a sessão da equipe, a rota de resumo dá 403. Com a do dono e uma IA simulada, a resposta que esquece uma NC é recusada e a válida é gravada e exibida. Mudar uma NC invalida o resumo.
 
-- [ ] T057 [P] [US5] Escrever `lib/dominio/assinatura.test.ts` (independe da ordem das NCs; muda quando muda `id`, `item`, `descricao` ou `sublocal`, ou quando uma NC entra ou sai do conjunto visível; **não** muda quando uma NC passa de Aberta para Corrigida) e implementar `lib/dominio/assinatura.ts` com SHA-256 (data-model.md "Resumo da IA válido para exibição"; `pacotes.resumo_assinatura`)
-- [ ] T058 [P] [US5] Escrever `lib/servidor/ia.test.ts`, com o cliente da IA injetado:
+- [X] T057 [P] [US5] Escrever `lib/dominio/assinatura.test.ts` (independe da ordem das NCs; muda quando muda `id`, `item`, `descricao` ou `sublocal`, ou quando uma NC entra ou sai do conjunto visível; **não** muda quando uma NC passa de Aberta para Corrigida) e implementar `lib/dominio/assinatura.ts` com SHA-256 (data-model.md "Resumo da IA válido para exibição"; `pacotes.resumo_assinatura`)
+- [X] T058 [P] [US5] Escrever `lib/servidor/ia.test.ts`, com o cliente da IA injetado:
   - O prompt traz só ids curtos e campos cortados (item 120, descrição 300, sublocal 60), no máximo 300 NCs, e diz que o texto é dado.
   - As 4 regras de validação de `contracts/ia.md`: JSON inválido, `linhas` fora de 1 a 30, texto vazio, id inventado e NC faltando são recusados.
   - A linha final é montada como `texto (juntarLocais) ×n`, com os ids reais.
-- [ ] T059 [US5] Implementar `lib/servidor/ia.ts`, trazendo `perguntarLLM` e `lerJSON` de `lib/llm.ts` e apagando `lib/llm.ts`
-- [ ] T060 [US5] Escrever os testes e implementar `salvarResumo` e `excluirPacote` em `lib/servidor/repositorio.ts`:
+- [X] T059 [US5] Implementar `lib/servidor/ia.ts`, trazendo `perguntarLLM` e `lerJSON` de `lib/llm.ts` e apagando `lib/llm.ts`
+- [X] T060 [US5] Escrever os testes e implementar `salvarResumo` e `excluirPacote` em `lib/servidor/repositorio.ts`:
   - `salvarResumo` grava `pacotes.resumo_ia`, `pacotes.resumo_assinatura` e `pacotes.resumo_em` e o evento `resumo_ia_gerado`, com autor `dono`.
   - `excluirPacote` apaga o pacote com as NCs, marcações e comentários (cascade) e grava `pacote_excluido`. O evento continua lá, porque `eventos.codigo_pacote` não tem FK.
-- [ ] T061 [US5] Completar `lib/dominio/visao.ts` e o teste dele: se `resumo_assinatura` for igual a `assinatura(NCs visíveis)`, `linhas` vêm do resumo, com `resumoIA: true`; senão, vêm as linhas locais
-- [ ] T062 [US5] Escrever os testes e implementar `app/api/pacotes/[codigo]/resumo/route.ts` (POST, `exigirPapel("dono")`, `maxDuration = 60`, lê as NCs do banco; em falha devolve 200 com `aviso` e não grava nada) e `app/api/pacotes/[codigo]/route.ts` (DELETE, dono). O teste confirma o 403 para a equipe (SC-005) (`contracts/api.md` "Dono")
-- [ ] T063 [US5] Acrescentar casos em `lib/api.test.ts` e depois implementar `resumir(codigo)` e `excluir(codigo)` em `lib/api.ts`. Escrever os testes e evoluir `components/Quadro.tsx` e `components/CartaoPacote.tsx`, com os botões visíveis só para o papel `dono`:
+- [X] T061 [US5] Completar `lib/dominio/visao.ts` e o teste dele: se `resumo_assinatura` for igual a `assinatura(NCs visíveis)`, `linhas` vêm do resumo, com `resumoIA: true`; senão, vêm as linhas locais
+- [X] T062 [US5] Escrever os testes e implementar `app/api/pacotes/[codigo]/resumo/route.ts` (POST, `exigirPapel("dono")`, `maxDuration = 60`, lê as NCs do banco; em falha devolve 200 com `aviso` e não grava nada) e `app/api/pacotes/[codigo]/route.ts` (DELETE, dono). O teste confirma o 403 para a equipe (SC-005) (`contracts/api.md` "Dono")
+- [X] T063 [US5] Acrescentar casos em `lib/api.test.ts` e depois implementar `resumir(codigo)` e `excluir(codigo)` em `lib/api.ts`. Escrever os testes e evoluir `components/Quadro.tsx` e `components/CartaoPacote.tsx`, com os botões visíveis só para o papel `dono`:
   - "Resumir com IA" no card.
   - "Resumir todos", que chama um pacote por vez, com progresso.
   - "Excluir", com confirmação.
@@ -265,9 +265,9 @@ começar.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T064 [P] Revisar o `README.md` inteiro (FR-029), que já foi atualizado a cada mudança, e conferir que ele descreve: o fluxo com a planilha, os 2 níveis de acesso, as variáveis de ambiente, o `npm run db:migrar`, o deploy no Vercel com o Neon, os campos que saem do navegador (research.md R5) e o que vai para a IA
-- [ ] T065 [P] Passar a acessibilidade em `components/*.tsx`: todo campo com rótulo, foco visível, ordem de tabulação, grupos expansíveis por teclado (Enter e Espaço) e contraste das faixas de origem (quickstart, cenário 12)
-- [ ] T066 Rodar a verificação de limpeza de `quickstart.md` §4 e apagar o que restar (SC-008)
+- [X] T064 [P] Revisar o `README.md` inteiro (FR-029), que já foi atualizado a cada mudança, e conferir que ele descreve: o fluxo com a planilha, os 2 níveis de acesso, as variáveis de ambiente, o `npm run db:migrar`, o deploy no Vercel com o Neon, os campos que saem do navegador (research.md R5) e o que vai para a IA
+- [X] T065 [P] Passar a acessibilidade em `components/*.tsx`: todo campo com rótulo, foco visível, ordem de tabulação, grupos expansíveis por teclado (Enter e Espaço) e contraste das faixas de origem (quickstart, cenário 12)
+- [X] T066 Rodar a verificação de limpeza de `quickstart.md` §4 e apagar o que restar (SC-008)
 - [ ] T067 Importar a planilha real no celular usado na obra e medir. Se a leitura passar de 3 s, mover `lib/planilha/ler.ts` e `importar.ts` para um Web Worker (research.md R1, shortcut; SC-001)
 - [ ] T068 Conferir a implantação no Vercel: `SITE_PASSWORD` removida, todas as variáveis em Production e Preview, `npm run db:migrar` rodado no banco de produção com o schema final, e o login, uma importação, uma marcação e uma exportação funcionando no site publicado
 - [ ] T069 Rodar `npm test`, `npm run typecheck` e `npx next build` e os 12 cenários de `quickstart.md`

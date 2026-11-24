@@ -9,7 +9,8 @@ import { gerarXlsx } from "@/tests/fixtures/planilha";
 import { lerPlanilha } from "@/lib/planilha/ler";
 import { importar as lerCarga } from "@/lib/planilha/importar";
 import { bancoPostgres } from "./banco";
-import { importar, listarPacotes } from "./repositorio";
+import { assinatura } from "@/lib/dominio/assinatura";
+import { importar, listarPacotes, salvarResumo } from "./repositorio";
 
 let db: PGlite;
 let servidor: PGLiteSocketServer;
@@ -41,6 +42,8 @@ describe("bancoPostgres com postgres.js real", () => {
     expect(ps[0].linhas[0].texto).toBe("Esquadro entre alvenarias (AP 1-2, HALL A-B) ×4");
     const [imp] = await banco.consulta<{ contagens: any }>("SELECT contagens FROM importacoes ORDER BY id LIMIT 1");
     expect(imp.contagens.ncs).toBe(14);
+    const r = await salvarResumo(banco, "100001", [{ texto: "x", ncs: ps[0].ncs.map((n) => n.id) }], assinatura(ps[0].ncs));
+    expect(r).toMatchObject({ resumoIA: true, linhas: [{ ncs: ps[0].ncs.map((n) => n.id) }] });
   }, 30_000);
 
   it("transação desfaz tudo quando falha", async () => {

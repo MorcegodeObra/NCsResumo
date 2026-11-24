@@ -3,11 +3,12 @@ import "server-only";
 // marcacoes nem comentarios (Princípio V).
 import { situacaoNC } from "@/lib/dominio/situacao";
 import { montarVisao } from "@/lib/dominio/visao";
-import type { CargaImportacao, ComentarioVisao, Contagens, EventoVisao, NCImportada, PacoteVisao } from "@/lib/dominio/tipos";
+import type { CargaImportacao, ComentarioVisao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/lib/dominio/tipos";
 import type { Banco, Consultor } from "./banco";
 import { ErroHttp } from "./http";
 
 const AUTOR_IMPORTACAO = "importação";
+const AUTOR_DONO = "dono";
 const TRAVA_IMPORTACAO = 4242_0001;
 
 // Formatos de saída fixos, iguais no Postgres e no PGlite.
@@ -112,11 +113,14 @@ export async function importar(banco: Banco, autor: string, carga: CargaImportac
   });
 }
 
-type LinhaPacote = { codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null };
+type LinhaPacote = {
+  codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
+  resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
+};
 
 async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Promise<PacoteVisao[]> {
   const pacotes = await banco.consulta<LinhaPacote>(
-    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em FROM pacotes ${filtro}`,
+    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
@@ -139,6 +143,7 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
         {
           marcacoes,
           comentarios: comentarios.filter((c) => c.codigo_pacote === p.codigo).map(({ autor, texto, em }) => ({ autor, texto, em })),
+          resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
     )
@@ -198,4 +203,33 @@ export async function historico(banco: Consultor, codigo: string): Promise<Event
   );
   if (!evs.length) throw new ErroHttp(404, "Pacote não encontrado.");
   return evs;
+}
+
+/** Grava o resumo da IA, já validado, com a assinatura das NCs que ele cobre. */
+export async function salvarResumo(banco: Banco, codigo: string, linhas: LinhaCard[], assinatura: string): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    await tx.consulta(
+      "UPDATE pacotes SET resumo_ia = $2::text::jsonb, resumo_assinatura = $3, resumo_em = now() WHERE codigo = $1",
+      [codigo, JSON.stringify(linhas), assinatura],
+    );
+    const pacote = await buscarPacote(tx, codigo);
+    await gravarEventos(tx, [{ codigo, idNc: null, tipo: "resumo_ia_gerado", detalhe: { linhas: linhas.length }, autor: AUTOR_DONO }]);
+    return pacote;
+  });
+}
+
+/** Exclusão definitiva: NCs, marcações e comentários vão junto (cascade); os eventos ficam. */
+export async function excluirPacote(banco: Banco, codigo: string): Promise<void> {
+  await banco.transacao(async (tx) => {
+    const [apagado] = await tx.consulta(
+      `DELETE FROM pacotes p WHERE codigo = $1
+       RETURNING tarefa, bloco, pavimento,
+         (SELECT count(*)::int FROM ncs WHERE codigo_pacote = p.codigo) AS ncs,
+         (SELECT count(*)::int FROM marcacoes m JOIN ncs n ON n.id = m.id_nc WHERE n.codigo_pacote = p.codigo) AS marcacoes,
+         (SELECT count(*)::int FROM comentarios WHERE codigo_pacote = p.codigo) AS comentarios`,
+      [codigo],
+    );
+    if (!apagado) throw new ErroHttp(404, "Pacote não encontrado.");
+    await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_excluido", detalhe: apagado, autor: AUTOR_DONO }]);
+  });
 }

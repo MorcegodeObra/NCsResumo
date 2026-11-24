@@ -123,4 +123,10 @@ describe("<Quadro/>", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
     expect(await screen.findByRole("region", { name: "Aberto (0)" })).toBeTruthy();
   });
+
+  it("mostra a exportação quando o quadro carrega", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
+    render(<Quadro papel="equipe" />);
+    for (const name of ["Copiar texto", "Baixar CSV", "Imprimir"]) expect(await screen.findByRole("button", { name })).toBeTruthy();
+  });
 });

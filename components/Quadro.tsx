@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import CartaoPacote, { NOME_COLUNA } from "./CartaoPacote";
+import Exportar from "./Exportar";
 import Importar from "./Importar";
 import { enviarImportacao, listarPacotes, resumir } from "@/lib/api";
 import { exigirNome } from "@/lib/nome";
@@ -109,6 +110,7 @@ export default function Quadro({ papel }: { papel: Papel }) {
             Resumir todos
           </button>
         )}
+        {pacotes && <Exportar pacotes={pacotes} />}
         {progresso && <p className="cinza" aria-live="polite">{progresso}</p>}
         {enviando && <p className="cinza" aria-live="polite">Gravando a importação…</p>}
         {aviso && <p className="aviso" aria-live="polite">{aviso}</p>}

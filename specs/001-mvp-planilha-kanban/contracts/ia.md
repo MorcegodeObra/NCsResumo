@@ -32,7 +32,7 @@ A resposta só é aceita se:
 
 1. O JSON é válido e `linhas` é uma lista de 1 a 30 itens.
 2. Cada `texto` não fica vazio depois de cortado em 120 caracteres.
-3. Todo id em `ncs` existe na entrada.
+3. Cada `ncs` tem pelo menos um id, e todo id existe na entrada.
 4. A união de todos os `ncs` é **igual** ao conjunto enviado. Uma NC pode aparecer em mais de
    uma linha, mas nenhuma pode faltar.
 
