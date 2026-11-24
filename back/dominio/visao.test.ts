@@ -50,9 +50,9 @@ describe("montarVisao", () => {
     expect(v.saiuEm).toBe("2026-11-20T10:00:00Z");
   });
 
-  it("repassa os comentários", () => {
-    const comentarios = [{ autor: "Ana", texto: "feito", em: "2026-11-20T10:00:00Z" }];
-    expect(visao("100001", { comentarios }).comentarios).toEqual(comentarios);
+  it("repassa a resolução; sem ela, vazio", () => {
+    expect(visao("100001", { resolucao: "refazer" }).resolucao).toBe("refazer");
+    expect(visao("100001").resolucao).toBe("");
   });
 
   it("resumo da IA com a assinatura das NCs visíveis: linhas com locais e contagem calculados", () => {

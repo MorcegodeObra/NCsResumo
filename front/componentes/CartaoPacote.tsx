@@ -1,9 +1,10 @@
 "use client";
+import Link from "next/link";
 import { useId, useState } from "react";
 import Historico from "./Historico";
-import { comentar, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
+import { definirResolucao, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
-import { dataBR, dataHoraBR } from "@/compartilhado/dominio/datas";
+import { dataBR } from "@/compartilhado/dominio/datas";
 import type { Coluna, LinhaCard, NCVisao, PacoteVisao, Papel } from "@/compartilhado/dominio/tipos";
 import { exigirNome } from "@/front/lib/nome";
 
@@ -50,17 +51,21 @@ function Grupo({ linha, ncs, travado, onMarcar }: { linha: LinhaCard; ncs: NCVis
 interface Props {
   p: PacoteVisao;
   papel?: Papel;
+  /** Página de cards: com histórico e as ações do dono. No kanban, o card é enxuto. */
+  completo?: boolean;
   onMudou?: (p: PacoteVisao) => void;
   onExcluido?: (codigo: string) => void;
 }
 
-export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido }: Props) {
+export default function CartaoPacote({ p, papel = "equipe", completo = false, onMudou, onExcluido }: Props) {
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState("");
-  const [comentario, setComentario] = useState("");
+  const [texto, setTexto] = useState(p.resolucao);
+  const [salva, setSalva] = useState(false);
   const [verHistorico, setVerHistorico] = useState(false);
-  const idComentario = useId();
+  const idResolucao = useId();
   const idHistorico = useId();
+  const acoesDoDono = completo && papel === "dono";
 
   /** Uma ação por vez; ignora o clique em vez de desabilitar, para o foco do teclado não se perder. */
   async function fazer(acao: () => Promise<void>) {
@@ -85,12 +90,14 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
   const abertas = p.ncs.filter((n) => n.situacao === "aberta").map((n) => n.id);
   const alternar = (n: NCVisao) => mudar((autor) => (n.situacao === "aberta" ? marcar : desmarcar)(p.codigo, autor, [n.id]));
 
-  function enviarComentario(e: React.FormEvent) {
+  function salvarResolucao(e: React.FormEvent) {
     e.preventDefault();
-    void mudar(async (autor) => {
-      const novo = await comentar(p.codigo, autor, comentario);
-      setComentario("");
-      return novo;
+    void fazer(async () => {
+      const novo = await definirResolucao(p.codigo, texto);
+      // Não troca o que o dono digitou enquanto gravava.
+      setTexto((t) => (t === texto ? novo.resolucao : t));
+      setSalva(true);
+      onMudou?.(novo);
     });
   }
 
@@ -102,7 +109,7 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
     });
 
   function apagar() {
-    if (!window.confirm(`Excluir de vez o pacote ${p.codigo} (${p.bloco} · ${p.pavimento}), com as marcações e os comentários?`)) return;
+    if (!window.confirm(`Excluir de vez o pacote ${p.codigo} (${p.bloco} · ${p.pavimento}), com as marcações e a possível resolução?`)) return;
     void fazer(async () => {
       await excluir(p.codigo);
       onExcluido?.(p.codigo);
@@ -110,7 +117,7 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
   }
 
   return (
-    <article className={`cartao ${p.origem}`} aria-label={`Pacote ${p.codigo}`} aria-busy={ocupado}>
+    <article className={`cartao ${p.origem} ${p.coluna}`} aria-label={`Pacote ${p.codigo}`} aria-busy={ocupado}>
       <header className="faixa">
         <span>ORIGEM: {NOME_ORIGEM[p.origem]}</span>
         <span>EMPRESA: {p.equipes || "________"}</span>
@@ -129,6 +136,13 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
             <Grupo key={i} linha={l} ncs={p.ncs} travado={!!p.saiuEm} onMarcar={alternar} />
           ))}
         </ul>
+        {p.resolucao && (
+          // Quem edita já vê o texto no campo; este é o da leitura e o da impressão.
+          <div className={`resolucao${acoesDoDono ? " so-impressao" : ""}`}>
+            <strong>Possível resolução</strong>
+            <p>{p.resolucao}</p>
+          </div>
+        )}
       </div>
       <footer className="rodape">
         <div>
@@ -151,15 +165,21 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
               Mover para Corrigido
             </button>
           )}
-          <button type="button" className="botao" aria-expanded={verHistorico} aria-controls={idHistorico} onClick={() => setVerHistorico(!verHistorico)}>
-            Histórico
-          </button>
-          {papel === "dono" && p.linhas.length > 0 && (
+          {completo ? (
+            <button type="button" className="botao" aria-expanded={verHistorico} aria-controls={idHistorico} onClick={() => setVerHistorico(!verHistorico)}>
+              Histórico
+            </button>
+          ) : (
+            <Link className="botao" href={`/cards?q=${p.codigo}`}>
+              Abrir card
+            </Link>
+          )}
+          {acoesDoDono && p.linhas.length > 0 && (
             <button type="button" className="botao" onClick={gerarResumo}>
               Resumir com IA
             </button>
           )}
-          {papel === "dono" && (
+          {acoesDoDono && (
             <button type="button" className="botao perigo" onClick={apagar}>
               Excluir
             </button>
@@ -168,25 +188,25 @@ export default function CartaoPacote({ p, papel = "equipe", onMudou, onExcluido 
         {ocupado && <p className="cinza" aria-live="polite">Aguarde…</p>}
         {erro && <p role="alert" className="erro">{erro}</p>}
         <div id={idHistorico}>{verHistorico && <Historico codigo={p.codigo} />}</div>
-        {p.comentarios.length > 0 && (
-          <ul className="historico" aria-label="Comentários">
-            {p.comentarios.map((c, i) => (
-              <li key={i}>
-                {c.texto}
-                <small>
-                  {c.autor} · {dataHoraBR(c.em)}
-                </small>
-              </li>
-            ))}
-          </ul>
+        {acoesDoDono && (
+          <form className="resolver" onSubmit={salvarResolucao}>
+            <label htmlFor={idResolucao}>Possível resolução</label>
+            <textarea
+              id={idResolucao}
+              rows={3}
+              maxLength={1000}
+              value={texto}
+              onChange={(e) => {
+                setTexto(e.target.value);
+                setSalva(false);
+              }}
+            />
+            <button type="submit" className="botao">
+              Salvar resolução
+            </button>
+            {salva && <p className="cinza" aria-live="polite">Resolução salva.</p>}
+          </form>
         )}
-        <form className="comentar" onSubmit={enviarComentario}>
-          <label htmlFor={idComentario}>Comentário</label>
-          <textarea id={idComentario} rows={2} maxLength={1000} required value={comentario} onChange={(e) => setComentario(e.target.value)} />
-          <button type="submit" className="botao">
-            Comentar
-          </button>
-        </form>
       </div>
     </article>
   );

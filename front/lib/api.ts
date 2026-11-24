@@ -65,13 +65,14 @@ const acaoNoPacote = async (codigo: string, caminho: string, init: RequestInit) 
 
 export const marcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("POST", { autor, ncs }));
 export const desmarcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("DELETE", { autor, ncs }));
-export const comentar = (codigo: string, autor: string, texto: string) => acaoNoPacote(codigo, "comentarios", json("POST", { autor, texto }));
 
 export async function historico(codigo: string): Promise<EventoVisao[]> {
   return (await chamar<{ eventos: EventoVisao[] }>(`/api/pacotes/${codigo}/historico`)).eventos;
 }
 
 // ---- Só o dono ----
+
+export const definirResolucao = (codigo: string, texto: string) => acaoNoPacote(codigo, "resolucao", json("PUT", { texto }));
 
 /** Resumo da IA; com `aviso`, a IA falhou e o card continua com o resumo local. */
 export const resumir = (codigo: string) =>

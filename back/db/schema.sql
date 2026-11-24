@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS pacotes (
   resumo_em         timestamptz
 );
 
+-- (b) possível resolução, escrita só pelo dono; a importação nunca escreve aqui (specs/002)
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS resolucao text NOT NULL DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS ncs (
   id              text PRIMARY KEY,
   codigo_pacote   text NOT NULL REFERENCES pacotes(codigo) ON DELETE CASCADE,
@@ -37,14 +40,6 @@ CREATE TABLE IF NOT EXISTS marcacoes (
   id_nc text PRIMARY KEY REFERENCES ncs(id) ON DELETE CASCADE,
   autor text NOT NULL,
   em    timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS comentarios (
-  id            bigserial PRIMARY KEY,
-  codigo_pacote text NOT NULL REFERENCES pacotes(codigo) ON DELETE CASCADE,
-  autor         text NOT NULL,
-  texto         text NOT NULL,
-  em            timestamptz NOT NULL DEFAULT now()
 );
 
 -- (c) histórico; sem FK para sobreviver à exclusão do pacote

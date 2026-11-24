@@ -5,7 +5,7 @@ import { lerPlanilha } from "@/front/planilha/ler";
 import { importar as lerCarga } from "@/front/planilha/importar";
 import type { CargaImportacao } from "@/compartilhado/dominio/tipos";
 import { assinatura } from "@/back/dominio/assinatura";
-import { buscarPacote, comentar, desmarcar, excluirPacote, historico, importar, listarPacotes, marcar, salvarResumo } from "./repositorio";
+import { buscarPacote, definirResolucao, desmarcar, excluirPacote, historico, importar, listarPacotes, marcar, salvarResumo } from "./repositorio";
 
 let banco: Awaited<ReturnType<typeof bancoDeTeste>>;
 beforeEach(async () => (banco = await bancoDeTeste()));
@@ -81,13 +81,13 @@ describe("importar", () => {
     expect(p.saiu_em).toBeNull();
   });
 
-  it("não toca em marcações nem comentários", async () => {
+  it("não toca em marcações nem na resolução", async () => {
     await importar(banco, "Maria", dia1());
     await banco.consulta("INSERT INTO marcacoes (id_nc, autor) VALUES ('9102', 'Ana')");
-    await banco.consulta("INSERT INTO comentarios (codigo_pacote, autor, texto) VALUES ('100002', 'Ana', 'feito')");
+    await definirResolucao(banco, "100002", "refazer");
     await importar(banco, "Maria", dia1());
     expect(await banco.consulta("SELECT id_nc, autor FROM marcacoes")).toEqual([{ id_nc: "9102", autor: "Ana" }]);
-    expect(await banco.consulta("SELECT autor, texto FROM comentarios")).toEqual([{ autor: "Ana", texto: "feito" }]);
+    expect((await buscarPacote(banco, "100002")).resolucao).toBe("refazer");
   });
 
   it("falha no meio desfaz tudo (tudo ou nada)", async () => {
@@ -187,14 +187,18 @@ describe("marcar e desmarcar", () => {
   });
 });
 
-describe("comentar e historico", () => {
+describe("resolução e histórico", () => {
   beforeEach(async () => void (await importar(banco, "Maria", dia1())));
 
-  it("comentar grava o comentário e o evento", async () => {
-    const p = await comentar(banco, "100001", "Ana", "massa aplicada");
-    expect(p.comentarios).toEqual([{ autor: "Ana", texto: "massa aplicada", em: expect.stringMatching(/Z$/) }]);
-    expect((await eventos()).at(-1)).toMatchObject({ tipo: "comentario", autor: "Ana", detalhe: { texto: "massa aplicada" } });
-    await expect(comentar(banco, "777", "Ana", "x")).rejects.toMatchObject({ status: 404 });
+  it("grava a resolução com evento do dono; repetir não gera evento; vazio apaga", async () => {
+    expect((await definirResolucao(banco, "100001", "aplicar massa")).resolucao).toBe("aplicar massa");
+    await definirResolucao(banco, "100001", "aplicar massa");
+    expect((await definirResolucao(banco, "100001", "")).resolucao).toBe("");
+    expect((await eventos()).filter((e) => e.tipo === "resolucao_alterada")).toEqual([
+      expect.objectContaining({ autor: "dono", codigo_pacote: "100001", detalhe: { antes: "", depois: "aplicar massa" } }),
+      expect.objectContaining({ detalhe: { antes: "aplicar massa", depois: "" } }),
+    ]);
+    await expect(definirResolucao(banco, "777", "x")).rejects.toMatchObject({ status: 404 });
   });
 
   it("histórico do mais novo para o mais antigo, só do pacote, no máximo 200", async () => {
@@ -247,18 +251,17 @@ describe("salvarResumo", () => {
 describe("excluirPacote", () => {
   beforeEach(async () => void (await importar(banco, "Maria", dia1())));
 
-  it("apaga pacote, NCs, marcações e comentários; o histórico fica, com o que foi apagado", async () => {
+  it("apaga pacote, NCs e marcações; o histórico fica, com o que foi apagado", async () => {
     await marcar(banco, "100002", "Ana", ["9102"]);
-    await comentar(banco, "100002", "Ana", "feito");
+    await definirResolucao(banco, "100002", "refazer");
     await excluirPacote(banco, "100002");
     expect((await listarPacotes(banco)).map((p) => p.codigo)).toEqual(["100001"]);
-    for (const t of ["ncs", "comentarios"])
-      expect(await banco.consulta(`SELECT 1 FROM ${t} WHERE codigo_pacote = '100002'`)).toEqual([]);
+    expect(await banco.consulta("SELECT 1 FROM ncs WHERE codigo_pacote = '100002'")).toEqual([]);
     expect(await banco.consulta("SELECT * FROM marcacoes")).toEqual([]);
     const h = await historico(banco, "100002");
     expect(h[0]).toMatchObject({
       tipo: "pacote_excluido", autor: "dono",
-      detalhe: { tarefa: "Alvenaria", bloco: "Bloco 2", pavimento: "TÉRREO", ncs: 7, marcacoes: 1, comentarios: 1 },
+      detalhe: { tarefa: "Alvenaria", bloco: "Bloco 2", pavimento: "TÉRREO", ncs: 7, marcacoes: 1, resolucao: "refazer" },
     });
     expect(h.some((e) => e.tipo === "nc_marcada")).toBe(true);
   });

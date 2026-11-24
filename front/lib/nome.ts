@@ -2,6 +2,7 @@
 const CHAVE = "nc-nome";
 export const lerNome = () => (typeof localStorage === "undefined" ? "" : (localStorage.getItem(CHAVE) ?? ""));
 export const guardarNome = (nome: string) => localStorage.setItem(CHAVE, nome.trim());
+export const apagarNome = () => localStorage.removeItem(CHAVE);
 
 /** Nome guardado; se não houver, pergunta e guarda. Lança erro se a pessoa não informar. */
 export function exigirNome(): string {

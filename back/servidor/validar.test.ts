@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ErroHttp } from "./http";
-import { autor, listaIds, str, textoComentario } from "./validar";
+import { autor, listaIds, str, textoResolucao } from "./validar";
 
 const erro400 = (f: () => unknown) => {
   try {
@@ -21,7 +21,7 @@ describe("str", () => {
   });
 });
 
-describe("autor (data-model.md marcacoes.autor, comentarios.autor)", () => {
+describe("autor (data-model.md marcacoes.autor)", () => {
   it("aceita de 1 a 60 caracteres", () => {
     expect(autor(" Maria ")).toBe("Maria");
     expect(autor("x".repeat(60))).toHaveLength(60);
@@ -34,14 +34,15 @@ describe("autor (data-model.md marcacoes.autor, comentarios.autor)", () => {
   });
 });
 
-describe("textoComentario (data-model.md comentarios.texto)", () => {
-  it("aceita de 1 a 1000", () => {
-    expect(textoComentario("ok")).toBe("ok");
-    expect(textoComentario("x".repeat(1000))).toHaveLength(1000);
+describe("textoResolucao (pacotes.resolucao)", () => {
+  it("aceita de 0 a 1000 e mantém as quebras de linha", () => {
+    expect(textoResolucao("")).toBe("");
+    expect(textoResolucao("x".repeat(1000))).toHaveLength(1000);
+    expect(textoResolucao(" a\r\nb ")).toBe("a\nb");
   });
-  it("recusa vazio e mais de 1000", () => {
-    expect(erro400(() => textoComentario(""))).toBe(true);
-    expect(erro400(() => textoComentario("x".repeat(1001)))).toBe(true);
+  it("recusa o que não é texto e mais de 1000", () => {
+    expect(erro400(() => textoResolucao(undefined))).toBe(true);
+    expect(erro400(() => textoResolucao("x".repeat(1001)))).toBe(true);
   });
 });
 

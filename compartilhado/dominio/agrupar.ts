@@ -35,15 +35,43 @@ export function linhaComLocais(texto: string, ncs: { sublocal: string }[]): stri
   return `${texto}${locais ? ` (${locais})` : ""}${ncs.length > 1 ? ` ×${ncs.length}` : ""}`;
 }
 
-/** Resumo local: uma linha por item de inspeção, do maior grupo para o menor, sem limite. */
-export function linhasLocais(ncs: { id: string; item: string; sublocal: string }[]): LinhaCard[] {
-  const grupos = new Map<string, { item: string; ncs: typeof ncs }>();
+// Lugares e termos que não dizem qual é o problema; no singular, sem acento.
+const VAGOS = new Set(
+  (
+    "parede sala cozinha quarto banheiro suite varanda sacada hall escada corredor area servico apartamento apto " +
+    "pavimento porta janela fachada entrada canto interno interna passa prato lado direito esquerdo entre todo toda alguma algum muito muita varia vario " +
+    "fora projeto conforme incompativel incompativei irregular irregulare errado errada ruim problema " +
+    "esta estao para pela pelo como deve falta correcao"
+  ).split(" "),
+);
+const simples = (s: string) => semAcento(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const palavras = (s: string) => (simples(s).match(/\b[a-z]{4,}\b/g) ?? []).map((p) => p.replace(/s$/, ""));
+
+/** A descrição diz mais que o item: ao menos 2 palavras (4+ letras) fora do item, dos lugares e dos termos vagos. */
+function bemDescrita({ item, descricao }: { item: string; descricao: string }): boolean {
+  const doItem = new Set(palavras(item));
+  return new Set(palavras(descricao).filter((p) => !doItem.has(p) && !VAGOS.has(p))).size >= 2;
+}
+
+type NCLinha = { id: string; item: string; descricao: string; sublocal: string };
+
+function agrupar(ncs: NCLinha[], chave: (n: NCLinha) => string, texto: (n: NCLinha) => string): LinhaCard[] {
+  const grupos = new Map<string, NCLinha[]>();
   for (const nc of ncs) {
-    const k = semAcento(nc.item).toLowerCase();
-    if (!grupos.has(k)) grupos.set(k, { item: nc.item, ncs: [] });
-    grupos.get(k)!.ncs.push(nc);
+    const k = chave(nc);
+    if (!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k)!.push(nc);
   }
   return [...grupos.values()]
-    .sort((a, b) => b.ncs.length - a.ncs.length)
-    .map((g) => ({ texto: linhaComLocais(g.item, g.ncs), ncs: g.ncs.map((n) => n.id) }));
+    .sort((a, b) => b.length - a.length)
+    .map((g) => ({ texto: linhaComLocais(texto(g[0]), g), ncs: g.map((n) => n.id) }));
+}
+
+/** Resumo local, sem limite: primeiro as NCs bem descritas, depois uma linha por item; cada parte do maior grupo para o menor. */
+export function linhasLocais(ncs: NCLinha[]): LinhaCard[] {
+  const item = (n: NCLinha) => semAcento(n.item).toLowerCase();
+  return [
+    ...agrupar(ncs.filter(bemDescrita), (n) => `${item(n)}|${simples(n.descricao)}`, (n) => n.descricao[0].toUpperCase() + n.descricao.slice(1)),
+    ...agrupar(ncs.filter((n) => !bemDescrita(n)), item, (n) => n.item),
+  ];
 }

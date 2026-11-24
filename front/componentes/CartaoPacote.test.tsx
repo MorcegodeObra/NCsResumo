@@ -119,30 +119,6 @@ describe("<CartaoPacote/> — ações da equipe", () => {
     expect(screen.queryByRole("button", { name: "Mover para Corrigido" })).toBeNull();
   });
 
-  it("comenta com rótulo, limpa o campo e mostra os comentários", async () => {
-    localStorage.setItem("nc-nome", "Ana");
-    const f = simularFetch(200, { pacote: pacoteVisao() });
-    render(<CartaoPacote p={pacoteVisao({ comentarios: [{ autor: "Bia", texto: "massa aplicada", em: "2026-11-20T13:00:00Z" }] })} />);
-    expect(screen.getByText(/massa aplicada/)).toBeTruthy();
-    expect(screen.getByText(/Bia · 20\/11\/2026 10:00/)).toBeTruthy();
-    const campo = screen.getByLabelText("Comentário") as HTMLTextAreaElement;
-    fireEvent.change(campo, { target: { value: "feito" } });
-    fireEvent.click(screen.getByRole("button", { name: "Comentar" }));
-    await vi.waitFor(() => expect(campo.value).toBe(""));
-    expect(corpoDe(f)).toEqual({ autor: "Ana", texto: "feito" });
-  });
-
-  it("erro do servidor aparece como alerta e o comentário não se perde", async () => {
-    localStorage.setItem("nc-nome", "Ana");
-    simularFetch(404, { erro: "Pacote não encontrado." });
-    render(<CartaoPacote p={pacoteVisao()} />);
-    const campo = screen.getByLabelText("Comentário") as HTMLTextAreaElement;
-    fireEvent.change(campo, { target: { value: "feito" } });
-    fireEvent.click(screen.getByRole("button", { name: "Comentar" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Pacote não encontrado.");
-    expect(campo.value).toBe("feito");
-  });
-
   it("sem nome guardado: pede o nome antes de gravar e guarda", async () => {
     const f = simularFetch(200, { pacote: pacoteVisao() });
     const perguntar = vi.fn().mockReturnValueOnce(null).mockReturnValueOnce(" Ana ");
@@ -160,7 +136,7 @@ describe("<CartaoPacote/> — ações da equipe", () => {
 
   it("abre o histórico a partir do card", async () => {
     simularFetch(200, { eventos: [{ tipo: "pacote_entrou", idNc: null, detalhe: {}, autor: "importação", em: "2026-11-20T13:00:00Z" }] });
-    render(<CartaoPacote p={pacoteVisao()} />);
+    render(<CartaoPacote p={pacoteVisao()} completo />);
     const botao = screen.getByRole("button", { name: "Histórico" });
     expect(botao.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(botao);
@@ -171,7 +147,7 @@ describe("<CartaoPacote/> — ações da equipe", () => {
 
 describe("<CartaoPacote/> — ações do dono", () => {
   it("a equipe não vê os botões do dono; o selo IA aparece para todos", () => {
-    render(<CartaoPacote p={pacoteVisao({ resumoIA: true })} />);
+    render(<CartaoPacote p={pacoteVisao({ resumoIA: true })} completo />);
     expect(screen.queryByRole("button", { name: "Resumir com IA" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Excluir" })).toBeNull();
     expect(screen.getByText("IA")).toBeTruthy();
@@ -184,7 +160,7 @@ describe("<CartaoPacote/> — ações do dono", () => {
     const novo = pacoteVisao();
     const f = simularFetch(200, { pacote: novo, aviso: "A IA não está configurada." });
     const onMudou = vi.fn();
-    render(<CartaoPacote p={pacoteVisao()} papel="dono" onMudou={onMudou} />);
+    render(<CartaoPacote p={pacoteVisao()} papel="dono" completo onMudou={onMudou} />);
     fireEvent.click(screen.getByRole("button", { name: "Resumir com IA" }));
     expect((await screen.findByRole("alert")).textContent).toBe("A IA não está configurada.");
     expect(onMudou).toHaveBeenCalledWith(novo);
@@ -192,7 +168,7 @@ describe("<CartaoPacote/> — ações do dono", () => {
   });
 
   it("pacote sem NC visível não tem o que resumir", () => {
-    render(<CartaoPacote p={pacoteVisao({ coluna: "concluido", linhas: [], ncs: [] })} papel="dono" />);
+    render(<CartaoPacote p={pacoteVisao({ coluna: "concluido", linhas: [], ncs: [] })} papel="dono" completo />);
     expect(screen.queryByRole("button", { name: "Resumir com IA" })).toBeNull();
   });
 
@@ -201,11 +177,51 @@ describe("<CartaoPacote/> — ações do dono", () => {
     const onExcluido = vi.fn();
     const confirmar = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
     vi.stubGlobal("confirm", confirmar);
-    render(<CartaoPacote p={pacoteVisao()} papel="dono" onExcluido={onExcluido} />);
+    render(<CartaoPacote p={pacoteVisao()} papel="dono" completo onExcluido={onExcluido} />);
     fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
     expect(f).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
     await vi.waitFor(() => expect(onExcluido).toHaveBeenCalledWith("100001"));
     expect(f.mock.calls[0][1].method).toBe("DELETE");
+  });
+});
+
+describe("<CartaoPacote/> — kanban e página de cards", () => {
+  it("no kanban: card enxuto, com link para o card completo, mesmo para o dono", () => {
+    render(<CartaoPacote p={pacoteVisao({ resolucao: "refazer" })} papel="dono" />);
+    expect(screen.getByRole("link", { name: /Abrir card/ }).getAttribute("href")).toBe("/cards?q=100001");
+    for (const name of ["Histórico", "Resumir com IA", "Excluir", "Salvar resolução"]) expect(screen.queryByRole("button", { name })).toBeNull();
+    expect(screen.getByText("refazer")).toBeTruthy();
+  });
+
+  it("a equipe lê a resolução, mas não escreve", () => {
+    render(<CartaoPacote p={pacoteVisao({ resolucao: "refazer" })} completo />);
+    expect(screen.getByText("refazer")).toBeTruthy();
+    expect(screen.queryByLabelText("Possível resolução")).toBeNull();
+  });
+
+  it("o dono escreve a resolução sem precisar informar o nome", async () => {
+    const novo = pacoteVisao({ resolucao: "demolir" });
+    const f = simularFetch(200, { pacote: novo });
+    const onMudou = vi.fn();
+    render(<CartaoPacote p={pacoteVisao({ resolucao: "refazer" })} papel="dono" completo onMudou={onMudou} />);
+    const campo = screen.getByLabelText("Possível resolução") as HTMLTextAreaElement;
+    expect(campo.value).toBe("refazer");
+    fireEvent.change(campo, { target: { value: "demolir" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar resolução" }));
+    await vi.waitFor(() => expect(onMudou).toHaveBeenCalledWith(novo));
+    expect(f.mock.calls[0][0]).toBe("/api/pacotes/100001/resolucao");
+    expect(corpoDe(f)).toEqual({ texto: "demolir" });
+    expect(await screen.findByText("Resolução salva.")).toBeTruthy();
+  });
+
+  it("erro ao salvar aparece como alerta e o texto não se perde", async () => {
+    simularFetch(404, { erro: "Pacote não encontrado." });
+    render(<CartaoPacote p={pacoteVisao()} papel="dono" completo />);
+    const campo = screen.getByLabelText("Possível resolução") as HTMLTextAreaElement;
+    fireEvent.change(campo, { target: { value: "demolir" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar resolução" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Pacote não encontrado.");
+    expect(campo.value).toBe("demolir");
   });
 });

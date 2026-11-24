@@ -51,12 +51,6 @@ export interface NCVisao {
   marcadaPor: string | null;
 }
 
-export interface ComentarioVisao {
-  autor: string;
-  texto: string;
-  em: string;
-}
-
 export interface PacoteVisao {
   codigo: string;
   tarefa: string;
@@ -70,7 +64,7 @@ export interface PacoteVisao {
   linhas: LinhaCard[];
   resumoIA: boolean;
   ncs: NCVisao[];
-  comentarios: ComentarioVisao[];
+  resolucao: string;
 }
 
 export interface EventoVisao {

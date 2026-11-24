@@ -2,18 +2,18 @@
 import { linhaComLocais, linhasLocais, menorPrazo } from "@/compartilhado/dominio/agrupar";
 import { assinatura } from "./assinatura";
 import { colunaDoPacote, ncsVisiveis, situacaoNC } from "./situacao";
-import type { ComentarioVisao, LinhaCard, NCImportada, PacoteImportado, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { LinhaCard, NCImportada, PacoteImportado, PacoteVisao } from "@/compartilhado/dominio/tipos";
 
 export interface Extras {
   marcacoes?: Record<string, string>; // id da NC → autor
-  comentarios?: ComentarioVisao[];
+  resolucao?: string;
   resumo?: { linhas: LinhaCard[]; assinatura: string } | null; // linhas como a IA escreveu, sem locais
 }
 
 export function montarVisao(
   pacote: PacoteImportado & { saiuEm: string | null },
   ncs: NCImportada[],
-  { marcacoes = {}, comentarios = [], resumo = null }: Extras,
+  { marcacoes = {}, resolucao = "", resumo = null }: Extras,
 ): PacoteVisao {
   const comSituacao = ncs.map((nc) => ({ ...nc, situacao: situacaoNC(nc, nc.id in marcacoes) }));
   const visiveis = ncsVisiveis(comSituacao) as (NCImportada & { situacao: "aberta" | "corrigida" })[];
@@ -43,6 +43,6 @@ export function montarVisao(
       situacao: n.situacao,
       marcadaPor: marcacoes[n.id] ?? null,
     })),
-    comentarios,
+    resolucao,
   };
 }

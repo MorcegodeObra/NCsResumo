@@ -17,6 +17,7 @@ function descrever({ tipo, idNc, detalhe: d }: EventoVisao): string {
     case "nc_marcada": return `NC ${idNc} marcada como corrigida`;
     case "nc_desmarcada": return `NC ${idNc} desmarcada`;
     case "comentario": return `Comentou: ${d.texto}`;
+    case "resolucao_alterada": return d.depois ? `Possível resolução: ${d.depois}` : "Possível resolução apagada";
     case "resumo_ia_gerado": return "Resumo da IA gerado";
     case "pacote_excluido": return "Pacote excluído";
     default: return tipo;

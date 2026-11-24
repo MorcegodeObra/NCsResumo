@@ -18,6 +18,7 @@ describe("prompt", () => {
     const [sistema, usuario] = perguntar.mock.calls[0];
     expect(sistema).toMatch(/dado/i);
     expect(sistema).toMatch(/ignor/i);
+    expect(sistema).toMatch(/linha própria/i);
     expect(usuario).toBe(`Tarefa: ${"T".repeat(120)}\nNCs:\n- n1 | ${"i".repeat(120)} | ${("d d" + "d".repeat(500)).slice(0, 300)} | ${"s".repeat(60)}`);
     expect(usuario).not.toContain("987654321");
   });

@@ -21,6 +21,6 @@ export const pacoteVisao = (x: Partial<PacoteVisao> = {}): PacoteVisao => ({
     { id: "9002", item: "Esquadro entre alvenarias", tipo: "Serviço: Não atendimento", descricao: "esquadro de paredes", sublocal: "HALL A", prazo: "2026-10-25", situacao: "corrigida", marcadaPor: "Maria" },
     { id: "9005", item: "Planicidade", tipo: "Serviço: Não atendimento", descricao: "parede fora de plano", sublocal: "AP 8", prazo: null, situacao: "aberta", marcadaPor: null },
   ],
-  comentarios: [],
+  resolucao: "",
   ...x,
 });

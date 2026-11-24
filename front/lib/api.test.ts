@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  comentar, desmarcar, entrar, enviarImportacao, ErroApi, excluir, historico, listarPacotes, marcar, papel, quandoSessaoExpirar, resumir, sair,
+  definirResolucao, desmarcar, entrar, enviarImportacao, ErroApi, excluir, historico, listarPacotes, marcar, papel, quandoSessaoExpirar, resumir, sair,
 } from "./api";
 
 const resposta = (status: number, corpo: unknown) =>
@@ -91,7 +91,7 @@ describe("ações no pacote", () => {
   it.each([
     ["marcar", () => marcar("100001", "Ana", ["1"]), "POST", "marcacoes", { autor: "Ana", ncs: ["1"] }],
     ["desmarcar", () => desmarcar("100001", "Ana", ["1"]), "DELETE", "marcacoes", { autor: "Ana", ncs: ["1"] }],
-    ["comentar", () => comentar("100001", "Ana", "oi"), "POST", "comentarios", { autor: "Ana", texto: "oi" }],
+    ["definirResolucao", () => definirResolucao("100001", "refazer"), "PUT", "resolucao", { texto: "refazer" }],
   ] as const)("%s: devolve o pacote", async (_, acao, metodo, caminho, corpo) => {
     const f = mockFetch(resposta(200, { pacote: { codigo: "100001" } }));
     expect(await acao()).toEqual({ codigo: "100001" });

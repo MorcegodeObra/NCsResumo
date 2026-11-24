@@ -19,9 +19,9 @@ export const pacotesParaTexto = (ps: PacoteVisao[]) => exportaveis(ps).map(pacot
 
 const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
 
-/** Colunas B a K da aba NCs da planilha de controle (cole a partir de B2). */
+/** Colunas B a K da aba NCs da planilha de controle e, na L, a possível resolução (cole a partir de B2). */
 export function pacotesParaCSV(ps: PacoteVisao[]): string {
-  const cab = ["Origem", "Empresa", "Bloco", "Pavimento", "Serviço", "Resumo das NCs", "Prazo", "Etapa", "Situação (0/1/2)", "Reconferências (0-3)"];
+  const cab = ["Origem", "Empresa", "Bloco", "Pavimento", "Serviço", "Resumo das NCs", "Prazo", "Etapa", "Situação (0/1/2)", "Reconferências (0-3)", "Possível resolução"];
   const linhas = exportaveis(ps).map((p) => {
     const origem = p.origem === "fvs" ? "Qualidade" : "Fiscalização";
     return [
@@ -35,6 +35,7 @@ export function pacotesParaCSV(ps: PacoteVisao[]): string {
       `Aguardando NCs ${origem}`,
       "0",
       "0",
+      p.resolucao,
     ];
   });
   return "﻿" + [cab, ...linhas].map((l) => l.map(esc).join(";")).join("\r\n");

@@ -12,11 +12,16 @@ function obrigatorio(v: unknown, max: number, nome: string): string {
   return s;
 }
 
-/** data-model.md marcacoes.autor / comentarios.autor: 1 a 60 caracteres. */
+/** data-model.md marcacoes.autor: 1 a 60 caracteres. */
 export const autor = (v: unknown) => obrigatorio(v, 60, "o seu nome");
 
-/** data-model.md comentarios.texto: 1 a 1000 caracteres. */
-export const textoComentario = (v: unknown) => obrigatorio(v, 1000, "o comentário");
+/** pacotes.resolucao (specs/002): 0 a 1000 caracteres, com as quebras de linha; vazio apaga. */
+export function textoResolucao(v: unknown): string {
+  if (typeof v !== "string") throw new ErroHttp(400, "Resolução inválida.");
+  const s = v.replace(/\r\n?/g, "\n").trim();
+  if (s.length > 1000) throw new ErroHttp(400, "A resolução pode ter no máximo 1000 caracteres.");
+  return s;
+}
 
 /** Lista de ids de NC, sem repetição. */
 export function listaIds(v: unknown, max = 2000): string[] {

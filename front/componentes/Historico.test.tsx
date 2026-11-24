@@ -20,6 +20,8 @@ describe("<Historico/>", () => {
     ["nc_marcada", "9001", {}, "NC 9001 marcada como corrigida"],
     ["nc_desmarcada", "9001", {}, "NC 9001 desmarcada"],
     ["comentario", null, { texto: "massa aplicada" }, "Comentou: massa aplicada"],
+    ["resolucao_alterada", null, { antes: "", depois: "refazer" }, "Possível resolução: refazer"],
+    ["resolucao_alterada", null, { antes: "refazer", depois: "" }, "Possível resolução apagada"],
     ["resumo_ia_gerado", null, { linhas: 3 }, "Resumo da IA gerado"],
     ["pacote_excluido", null, {}, "Pacote excluído"],
   ])("%s: descrição legível, autor, data e hora", async (tipo, idNc, detalhe, descricao) => {

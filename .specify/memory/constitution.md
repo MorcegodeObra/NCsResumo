@@ -1,3 +1,11 @@
+<!--
+Sync Impact Report
+- Versão: 1.1.0 → 1.2.0 (MINOR), pedida pelo dono em 2026-11-24 (specs/002)
+- Princípio IV: NC bem descrita ganha linha própria no card; CSV ganha a coluna L (possível resolução)
+- Princípio V: (b) inclui a possível resolução, escrita só pelo dono, no lugar do comentário
+- Caminhos atualizados para front/, back/ e compartilhado/
+-->
+
 # NCsResumo Constitution
 
 ## Core Principles
@@ -34,7 +42,7 @@ e vazamento, e o resultado local garante que a equipe nunca fique sem resultado.
 
 ### III. Test-First (NÃO NEGOCIÁVEL)
 
-- TDD é obrigatório em todo o código: `lib/`, rotas de API e interface (`app/`, `components/`).
+- TDD é obrigatório em todo o código: `back/`, `compartilhado/` e `front/`.
   O ciclo MUST ser: escrever o teste → confirmar que ele falha → implementar → refatorar.
 - A ferramenta de teste é o **Vitest**. Componentes React são testados com Vitest em ambiente
   de DOM.
@@ -73,8 +81,10 @@ São contratos que só mudam junto com o sistema de origem, o quadro ou a planil
     mais próximo e situação.
   - Os problemas MUST aparecer agrupados por item de inspeção, com os locais (`Sublocal`) e a
     contagem, ex.: "Esquadro entre alvenarias (AP 1-2-3, HALL A) ×19". Cada grupo pode ser
-    expandido para mostrar a lista de NCs.
-- **CSV**: colunas B a K da aba NCs da planilha de controle, colando a partir de B2.
+    expandido para mostrar a lista de NCs. A NC bem descrita (a descrição diz mais que o item)
+    ganha linha própria, com a descrição dela, também com locais e contagem.
+- **CSV**: colunas B a K da aba NCs da planilha de controle, colando a partir de B2, e a possível
+  resolução na coluna L.
 
 Mudar qualquer contrato MUST ter spec própria e teste de contrato que trave o novo formato.
 
@@ -87,7 +97,7 @@ o formato evita importar lixo em silêncio, e um card estável evita confundir a
   situação dos itens e datas). Cada importação MUST atualizar esses dados.
 - O servidor guarda apenas:
   - (a) os campos estruturados da NC e do pacote vindos da planilha;
-  - (b) o que a equipe acrescenta no kanban (marcação, comentário, quem e quando);
+  - (b) o que a equipe acrescenta no kanban (marcação, possível resolução escrita pelo dono, quem e quando);
   - (c) o histórico de mudanças.
   - (d) o resumo da IA de cada card, só para exibição, com a referência das NCs que ele cobre.
     Quando as NCs do pacote mudam, o resumo MUST deixar de ser exibido até ser gerado de novo.
@@ -130,7 +140,7 @@ repetível sem perder o trabalho da equipe.
 - **Segredos**: chaves e senhas ficam só em variáveis de ambiente (`.env.local` localmente e
   Environment Variables no Vercel). `.env*` MUST NOT ser commitado.
 - **Entrada não confiável**: todo dado recebido pelas rotas de API MUST ser validado e limitado
-  em tamanho, como `str()` em `lib/llm.ts` já faz. Os valores da planilha são texto livre
+  em tamanho, como `str()` em `back/servidor/validar.ts` já faz. Os valores da planilha são texto livre
   digitado em campo e MUST ser normalizados (espaços, "." como vazio, datas `dd/mm/aaaa`).
 - **Dispositivos**: a interface MUST funcionar no celular e no computador (layout responsivo,
   sem rolagem horizontal) e MUST ser utilizável por teclado, com rótulos em todos os campos.
@@ -163,4 +173,4 @@ repetível sem perder o trabalho da equipe.
   justificadas na tabela "Complexity Tracking" do plano, e `/speckit-analyze` é usado antes
   de implementar features que tocam os princípios I, II ou V.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-23 | **Last Amended**: 2026-11-23
+**Version**: 1.2.0 | **Ratified**: 2026-11-23 | **Last Amended**: 2026-11-24

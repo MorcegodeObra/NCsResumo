@@ -1,9 +1,9 @@
 import "server-only";
 // Acesso ao banco (data-model.md). Toda mudança gera evento; a importação não toca em
-// marcacoes nem comentarios (Princípio V).
+// marcacoes nem na resolucao (Princípio V).
 import { situacaoNC } from "@/back/dominio/situacao";
 import { montarVisao } from "@/back/dominio/visao";
-import type { CargaImportacao, ComentarioVisao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { CargaImportacao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
 import type { Banco, Consultor } from "./banco";
 import { ErroHttp } from "./http";
 
@@ -116,11 +116,12 @@ export async function importar(banco: Banco, autor: string, carga: CargaImportac
 type LinhaPacote = {
   codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
   resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
+  resolucao: string;
 };
 
 async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Promise<PacoteVisao[]> {
   const pacotes = await banco.consulta<LinhaPacote>(
-    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura FROM pacotes ${filtro}`,
+    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
@@ -131,10 +132,6 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
       [codigos],
     )).map((m) => [m.id_nc, m.autor]),
   );
-  const comentarios = await banco.consulta<ComentarioVisao & { codigo_pacote: string }>(
-    `SELECT codigo_pacote, autor, texto, ${ISO_UTC("em")} AS em FROM comentarios WHERE codigo_pacote = ANY($1::text[]) ORDER BY id`,
-    [codigos],
-  );
   return pacotes
     .map((p) =>
       montarVisao(
@@ -142,7 +139,7 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
         ncs.filter((n) => n.codigoPacote === p.codigo),
         {
           marcacoes,
-          comentarios: comentarios.filter((c) => c.codigo_pacote === p.codigo).map(({ autor, texto, em }) => ({ autor, texto, em })),
+          resolucao: p.resolucao,
           resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
@@ -186,11 +183,14 @@ export const desmarcar = (banco: Banco, codigo: string, autor: string, ncs: stri
     [codigo, ncs],
   );
 
-export async function comentar(banco: Banco, codigo: string, autor: string, texto: string): Promise<PacoteVisao> {
+/** Possível resolução, escrita só pelo dono; texto igual ao guardado não gera evento. */
+export async function definirResolucao(banco: Banco, codigo: string, depois: string): Promise<PacoteVisao> {
   return banco.transacao(async (tx) => {
-    await buscarPacote(tx, codigo);
-    await tx.consulta("INSERT INTO comentarios (codigo_pacote, autor, texto) VALUES ($1, $2, $3)", [codigo, autor, texto]);
-    await gravarEventos(tx, [{ codigo, idNc: null, tipo: "comentario", detalhe: { texto }, autor }]);
+    const [p] = await tx.consulta<{ resolucao: string }>("SELECT resolucao FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    if (p && p.resolucao !== depois) {
+      await tx.consulta("UPDATE pacotes SET resolucao = $2 WHERE codigo = $1", [codigo, depois]);
+      await gravarEventos(tx, [{ codigo, idNc: null, tipo: "resolucao_alterada", detalhe: { antes: p.resolucao, depois }, autor: AUTOR_DONO }]);
+    }
     return buscarPacote(tx, codigo);
   });
 }
@@ -218,15 +218,14 @@ export async function salvarResumo(banco: Banco, codigo: string, linhas: LinhaCa
   });
 }
 
-/** Exclusão definitiva: NCs, marcações e comentários vão junto (cascade); os eventos ficam. */
+/** Exclusão definitiva: NCs e marcações vão junto (cascade); os eventos ficam, com a resolução apagada. */
 export async function excluirPacote(banco: Banco, codigo: string): Promise<void> {
   await banco.transacao(async (tx) => {
     const [apagado] = await tx.consulta(
       `DELETE FROM pacotes p WHERE codigo = $1
-       RETURNING tarefa, bloco, pavimento,
+       RETURNING tarefa, bloco, pavimento, resolucao,
          (SELECT count(*)::int FROM ncs WHERE codigo_pacote = p.codigo) AS ncs,
-         (SELECT count(*)::int FROM marcacoes m JOIN ncs n ON n.id = m.id_nc WHERE n.codigo_pacote = p.codigo) AS marcacoes,
-         (SELECT count(*)::int FROM comentarios WHERE codigo_pacote = p.codigo) AS comentarios`,
+         (SELECT count(*)::int FROM marcacoes m JOIN ncs n ON n.id = m.id_nc WHERE n.codigo_pacote = p.codigo) AS marcacoes`,
       [codigo],
     );
     if (!apagado) throw new ErroHttp(404, "Pacote não encontrado.");
