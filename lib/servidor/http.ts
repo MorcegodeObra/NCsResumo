@@ -17,3 +17,15 @@ export function erroResposta(e: unknown) {
   console.error(e);
   return respostaErro(500, "Erro inesperado no servidor.");
 }
+
+/** Corpo JSON limitado em tamanho: 413 acima do limite, 400 se não for JSON. */
+export async function lerCorpo(req: Request, limite = 200_000, mensagem = "O corpo passa do limite de tamanho."): Promise<any> {
+  if (Number(req.headers.get("content-length") ?? 0) > limite) throw new ErroHttp(413, mensagem);
+  const texto = await req.text();
+  if (Buffer.byteLength(texto) > limite) throw new ErroHttp(413, mensagem);
+  try {
+    return JSON.parse(texto);
+  } catch {
+    throw new ErroHttp(400, "Corpo inválido.");
+  }
+}

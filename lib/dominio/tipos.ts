@@ -73,6 +73,14 @@ export interface PacoteVisao {
   comentarios: ComentarioVisao[];
 }
 
+export interface EventoVisao {
+  tipo: string;
+  idNc: string | null;
+  detalhe: Record<string, unknown>;
+  autor: string;
+  em: string;
+}
+
 export interface Contagens {
   pacotes: number;
   novos: number;

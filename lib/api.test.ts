@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { entrar, ErroApi, papel, quandoSessaoExpirar, sair } from "./api";
+import {
+  comentar, desmarcar, entrar, enviarImportacao, ErroApi, excluir, historico, listarPacotes, marcar, papel, quandoSessaoExpirar, resumir, sair,
+} from "./api";
 
 const resposta = (status: number, corpo: unknown) =>
   new Response(JSON.stringify(corpo), { status, headers: { "content-type": "application/json" } });
@@ -63,5 +65,59 @@ describe("cliente da API", () => {
     expect(aviso).not.toHaveBeenCalled();
     await sair().catch(() => {});
     expect(aviso).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+describe("importação e kanban", () => {
+  it("enviarImportacao: POST /api/importacoes com autor e carga; devolve as contagens", async () => {
+    const contagens = { pacotes: 1, novos: 1, saidos: 0, voltaram: 0, ncs: 0, ncsNovas: 0, ncsMudaram: 0 };
+    const f = mockFetch(resposta(200, { contagens }));
+    const carga = { pacotes: [{ codigo: "1", tarefa: "", bloco: "", pavimento: "", equipes: "" }], ncs: [] };
+    expect(await enviarImportacao("Maria", carga)).toEqual(contagens);
+    expect(f.mock.calls[0][0]).toBe("/api/importacoes");
+    expect(f.mock.calls[0][1].method).toBe("POST");
+    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ autor: "Maria", ...carga });
+  });
+
+  it("listarPacotes: GET /api/pacotes", async () => {
+    const f = mockFetch(resposta(200, { pacotes: [{ codigo: "1" }] }));
+    expect(await listarPacotes()).toEqual([{ codigo: "1" }]);
+    expect(f.mock.calls[0][0]).toBe("/api/pacotes");
+  });
+});
+
+describe("ações no pacote", () => {
+  it.each([
+    ["marcar", () => marcar("100001", "Ana", ["1"]), "POST", "marcacoes", { autor: "Ana", ncs: ["1"] }],
+    ["desmarcar", () => desmarcar("100001", "Ana", ["1"]), "DELETE", "marcacoes", { autor: "Ana", ncs: ["1"] }],
+    ["comentar", () => comentar("100001", "Ana", "oi"), "POST", "comentarios", { autor: "Ana", texto: "oi" }],
+  ] as const)("%s: devolve o pacote", async (_, acao, metodo, caminho, corpo) => {
+    const f = mockFetch(resposta(200, { pacote: { codigo: "100001" } }));
+    expect(await acao()).toEqual({ codigo: "100001" });
+    const [url, init] = f.mock.calls[0];
+    expect(url).toBe(`/api/pacotes/100001/${caminho}`);
+    expect(init.method).toBe(metodo);
+    expect(JSON.parse(init.body)).toEqual(corpo);
+  });
+
+  it("historico: GET, devolve os eventos", async () => {
+    const f = mockFetch(resposta(200, { eventos: [{ tipo: "comentario" }] }));
+    expect(await historico("100001")).toEqual([{ tipo: "comentario" }]);
+    expect(f.mock.calls[0][0]).toBe("/api/pacotes/100001/historico");
+  });
+
+  it("resumir: POST sem corpo, devolve o pacote e o aviso", async () => {
+    const f = mockFetch(resposta(200, { pacote: { codigo: "1" }, aviso: "falhou" }));
+    expect(await resumir("1")).toEqual({ pacote: { codigo: "1" }, aviso: "falhou" });
+    expect(f.mock.calls[0][0]).toBe("/api/pacotes/1/resumo");
+    expect(f.mock.calls[0][1]).toMatchObject({ method: "POST", body: undefined });
+  });
+
+  it("excluir: DELETE no pacote", async () => {
+    const f = mockFetch(resposta(200, { ok: true }));
+    await excluir("1");
+    expect(f.mock.calls[0][0]).toBe("/api/pacotes/1");
+    expect(f.mock.calls[0][1].method).toBe("DELETE");
   });
 });

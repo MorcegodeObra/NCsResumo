@@ -60,6 +60,20 @@ button, input, textarea { font: inherit; }
 .rodape small { display:block; font-size:9px; color:var(--cinza); }
 .rodape strong { font-size:16px; }
 .rodape strong.peq { font-size:12px; display:block; }
+.ncs label { display:flex; gap:6px; align-items:flex-start; cursor:pointer; }
+.ncs input { margin:2px 0 0; flex:none; width:18px; height:18px; }
+
+/* Ações do card: marcar, histórico, comentários */
+.acoes { border-top:1px solid #ccc; padding:8px 10px; font-size:13px; }
+.botoes { display:flex; flex-wrap:wrap; gap:6px; }
+.acoes .botao { padding:7px 10px; }
+.botao.perigo { color:#a40000; border-color:#a40000; }
+.historico { margin:8px 0; padding:0; list-style:none; max-height:260px; overflow-y:auto; }
+.historico li { padding:4px 0; border-bottom:1px dashed #e0e0e0; }
+.historico small { display:block; color:var(--cinza); }
+.comentar { display:flex; flex-direction:column; gap:4px; margin-top:8px; align-items:flex-start; }
+.comentar label { font-weight:700; }
+.comentar textarea { width:100%; padding:6px 8px; border:1px solid #767676; border-radius:8px; resize:vertical; }
 
 @media print {
   body { background:#fff; }

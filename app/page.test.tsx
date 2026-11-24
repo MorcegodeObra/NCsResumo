@@ -5,6 +5,9 @@ import Pagina from "./page";
 import { chamar } from "@/lib/api";
 
 const resposta = (status: number, corpo: unknown) => new Response(JSON.stringify(corpo), { status });
+/** fetch que responde o papel em /api/sessao e um quadro vazio em /api/pacotes. */
+const comSessao = (papel: string) =>
+  vi.fn(async (url: string) => (url === "/api/pacotes" ? resposta(200, { pacotes: [] }) : resposta(200, { papel })));
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -19,14 +22,14 @@ describe("página inicial", () => {
   });
 
   it("com sessão: mostra o quadro", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { papel: "equipe" })));
+    vi.stubGlobal("fetch", comSessao("equipe"));
     render(<Pagina />);
     expect(await screen.findByTestId("quadro")).toBeTruthy();
     expect(screen.queryByLabelText("Senha")).toBeNull();
   });
 
   it("com sessão, o Quadro aparece no lugar do placeholder (com a importação)", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { papel: "equipe" })));
+    vi.stubGlobal("fetch", comSessao("equipe"));
     render(<Pagina />);
     expect(await screen.findByLabelText(/Planilha de inspeções/)).toBeTruthy();
     expect(screen.queryByText(/Em construção/)).toBeNull();
@@ -35,7 +38,7 @@ describe("página inicial", () => {
   it("depois de entrar, troca para o quadro sem recarregar", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValueOnce(resposta(401, { erro: "x" })).mockResolvedValue(resposta(200, { papel: "dono" })),
+      vi.fn().mockResolvedValueOnce(resposta(401, { erro: "x" })).mockImplementation(comSessao("dono")),
     );
     render(<Pagina />);
     fireEvent.change(await screen.findByLabelText("Senha"), { target: { value: "abc" } });
@@ -47,7 +50,11 @@ describe("página inicial", () => {
   it("um 401 em qualquer chamada posterior volta para o login", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValueOnce(resposta(200, { papel: "equipe" })).mockResolvedValue(resposta(401, { erro: "x" })),
+      vi
+        .fn()
+        .mockResolvedValueOnce(resposta(200, { papel: "equipe" }))
+        .mockResolvedValueOnce(resposta(200, { pacotes: [] }))
+        .mockResolvedValue(resposta(401, { erro: "x" })),
     );
     render(<Pagina />);
     await screen.findByTestId("quadro");

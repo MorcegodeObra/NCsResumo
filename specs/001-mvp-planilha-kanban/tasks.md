@@ -154,7 +154,7 @@ começar.
 
 **Independent Test**: com o PGlite, importar o dia 1 e depois o dia 2 (NC aprovada, NC com correção, pacote ausente) e conferir colunas, `saiu_em` e eventos. Reimportar não gera evento.
 
-- [ ] T035 [P] [US2] Escrever em `lib/servidor/repositorio.test.ts` o bloco `importar`, seguindo data-model.md "Transições de importação":
+- [X] T035 [P] [US2] Escrever em `lib/servidor/repositorio.test.ts` o bloco `importar`, seguindo data-model.md "Transições de importação":
   - Novo pacote e nova NC geram eventos.
   - Mudança de situação grava o antes e o depois.
   - Pacote ausente recebe `pacotes.saiu_em` e o evento `pacote_saiu`; pacote que volta recebe `saiu_em = null` e `pacote_voltou`.
@@ -162,10 +162,10 @@ começar.
   - **Reimportar a mesma carga não gera nenhum evento**.
   - `marcacoes` e `comentarios` continuam intactos.
   - Uma falha no meio desfaz tudo.
-- [ ] T036 [US2] Implementar `importar(banco, autor, carga)` em `lib/servidor/repositorio.ts`: `pg_advisory_xact_lock`, upsert de `pacotes` e `ncs`, eventos com autor `importação` e `importacoes` (data-model.md `eventos.tipo`, `eventos.autor`, `importacoes.contagens`)
-- [ ] T037 [P] [US2] Escrever em `lib/servidor/repositorio.test.ts` o bloco `listarPacotes`, que devolve um `PacoteVisao[]` com a coluna certa por pacote (Concluído para ausentes e para quem não tem NC visível)
-- [ ] T038 [US2] Implementar `listarPacotes(banco)` em `lib/servidor/repositorio.ts`, com `montarVisao`
-- [ ] T039 [P] [US2] Escrever em `lib/servidor/validar.test.ts` a validação da carga de importação:
+- [X] T036 [US2] Implementar `importar(banco, autor, carga)` em `lib/servidor/repositorio.ts`: `pg_advisory_xact_lock`, upsert de `pacotes` e `ncs`, eventos com autor `importação` e `importacoes` (data-model.md `eventos.tipo`, `eventos.autor`, `importacoes.contagens`)
+- [X] T037 [P] [US2] Escrever em `lib/servidor/repositorio.test.ts` o bloco `listarPacotes`, que devolve um `PacoteVisao[]` com a coluna certa por pacote (Concluído para ausentes e para quem não tem NC visível)
+- [X] T038 [US2] Implementar `listarPacotes(banco)` em `lib/servidor/repositorio.ts`, com `montarVisao`
+- [X] T039 [P] [US2] Escrever em `lib/servidor/validar.test.ts` a validação da carga de importação:
   - Limites de 3 MB, 500 pacotes e 10.000 NCs (413).
   - `pacotes.codigo` só com dígitos.
   - Tamanhos máximos de data-model.md `pacotes.tarefa`, `pacotes.bloco`, `pacotes.pavimento`, `pacotes.equipes`, `ncs.item`, `ncs.tipo`, `ncs.descricao` e `ncs.situacao_item`.
@@ -173,11 +173,11 @@ começar.
   - `ncs.codigo_pacote` aponta para um pacote da carga.
   - Ids não se repetem.
   - Datas válidas ou `null` em `ncs.prazo`, `ncs.data_correcao` e `ncs.ultima_inspecao`.
-- [ ] T040 [US2] Implementar `validarCargaImportacao` em `lib/servidor/validar.ts`, com os limites de data-model.md `pacotes.codigo` (só dígitos), `pacotes.tarefa`, `pacotes.bloco`, `pacotes.pavimento`, `pacotes.equipes`, `ncs.codigo_pacote` (aponta para um pacote da carga), `ncs.item`, `ncs.origem`, `ncs.tipo`, `ncs.descricao`, `ncs.situacao_item`, `ncs.prazo`, `ncs.data_correcao` e `ncs.ultima_inspecao`
-- [ ] T041 [US2] Escrever `app/api/importacoes/route.test.ts` (401, 400, 413, 200 com `contagens`) e implementar `app/api/importacoes/route.ts`: `exigirPapel("equipe")`, validação e `importar` (`contracts/api.md` "Importação")
-- [ ] T042 [US2] Escrever `app/api/pacotes/route.test.ts` (401 sem sessão, 200 com `pacotes`) e implementar `app/api/pacotes/route.ts` (GET)
-- [ ] T043 [US2] Acrescentar casos em `lib/api.test.ts` e depois implementar `importar(carga)` e `listarPacotes()` em `lib/api.ts`
-- [ ] T044 [US2] Acrescentar casos em `components/Quadro.test.tsx` e evoluir `components/Quadro.tsx`:
+- [X] T040 [US2] Implementar `validarCargaImportacao` em `lib/servidor/validar.ts`, com os limites de data-model.md `pacotes.codigo` (só dígitos), `pacotes.tarefa`, `pacotes.bloco`, `pacotes.pavimento`, `pacotes.equipes`, `ncs.codigo_pacote` (aponta para um pacote da carga), `ncs.item`, `ncs.origem`, `ncs.tipo`, `ncs.descricao`, `ncs.situacao_item`, `ncs.prazo`, `ncs.data_correcao` e `ncs.ultima_inspecao`
+- [X] T041 [US2] Escrever `app/api/importacoes/route.test.ts` (401, 400, 413, 200 com `contagens`) e implementar `app/api/importacoes/route.ts`: `exigirPapel("equipe")`, validação e `importar` (`contracts/api.md` "Importação")
+- [X] T042 [US2] Escrever `app/api/pacotes/route.test.ts` (401 sem sessão, 200 com `pacotes`) e implementar `app/api/pacotes/route.ts` (GET)
+- [X] T043 [US2] Acrescentar casos em `lib/api.test.ts` e depois implementar `importar(carga)` e `listarPacotes()` em `lib/api.ts`
+- [X] T044 [US2] Acrescentar casos em `components/Quadro.test.tsx` e evoluir `components/Quadro.tsx`:
   - Carrega `GET /api/pacotes`.
   - Mostra 3 colunas com título e contagem (Aberto, Corrigido, Concluído). No celular elas ficam empilhadas, sem rolagem horizontal.
   - O `Importar` manda a carga com o nome do `localStorage`, mostra as contagens devolvidas e recarrega.
@@ -194,23 +194,23 @@ começar.
 
 **Independent Test**: marcar e comentar, reimportar a mesma carga e conferir que a marcação, o comentário e os eventos continuam.
 
-- [ ] T045 [P] [US3] Escrever em `lib/servidor/repositorio.test.ts` os blocos `marcar`, `desmarcar`, `comentar` e `historico`:
+- [X] T045 [P] [US3] Escrever em `lib/servidor/repositorio.test.ts` os blocos `marcar`, `desmarcar`, `comentar` e `historico`:
   - Marcar de novo uma NC já marcada não gera evento.
   - Desmarcar apaga a linha e grava `nc_desmarcada`.
   - Uma NC marcada que é aprovada na importação seguinte fica Concluída e o evento de marcação continua.
   - O histórico vem do mais novo para o mais antigo, no máximo 200.
   - Duas marcações simultâneas não se perdem.
-- [ ] T046 [US3] Implementar `marcar`, `desmarcar`, `comentar` e `historico` em `lib/servidor/repositorio.ts` (data-model.md `marcacoes.id_nc`, `marcacoes.autor`, `marcacoes.em`, `comentarios.autor`, `comentarios.texto`, `eventos.tipo`)
-- [ ] T047 [US3] Escrever `app/api/pacotes/[codigo]/marcacoes/route.test.ts` e implementar `app/api/pacotes/[codigo]/marcacoes/route.ts` (POST e DELETE): `exigirPapel("equipe")`, `autor` obrigatório, 404 para pacote inexistente (`contracts/api.md` "Kanban")
-- [ ] T048 [US3] Escrever `app/api/pacotes/[codigo]/comentarios/route.test.ts` e implementar `app/api/pacotes/[codigo]/comentarios/route.ts` (POST): `exigirPapel("equipe")`, `autor` e `texto` validados, 404 para pacote inexistente
-- [ ] T049 [US3] Escrever `app/api/pacotes/[codigo]/historico/route.test.ts` e implementar `app/api/pacotes/[codigo]/historico/route.ts` (GET): `exigirPapel("equipe")`, no máximo 200 eventos, 404 para pacote sem nenhum evento
-- [ ] T050 [US3] Acrescentar casos em `lib/api.test.ts` e depois implementar `marcar`, `desmarcar`, `comentar` e `historico` em `lib/api.ts`
-- [ ] T051 [US3] Escrever os testes e evoluir `components/CartaoPacote.tsx`:
+- [X] T046 [US3] Implementar `marcar`, `desmarcar`, `comentar` e `historico` em `lib/servidor/repositorio.ts` (data-model.md `marcacoes.id_nc`, `marcacoes.autor`, `marcacoes.em`, `comentarios.autor`, `comentarios.texto`, `eventos.tipo`)
+- [X] T047 [US3] Escrever `app/api/pacotes/[codigo]/marcacoes/route.test.ts` e implementar `app/api/pacotes/[codigo]/marcacoes/route.ts` (POST e DELETE): `exigirPapel("equipe")`, `autor` obrigatório, 404 para pacote inexistente (`contracts/api.md` "Kanban")
+- [X] T048 [US3] Escrever `app/api/pacotes/[codigo]/comentarios/route.test.ts` e implementar `app/api/pacotes/[codigo]/comentarios/route.ts` (POST): `exigirPapel("equipe")`, `autor` e `texto` validados, 404 para pacote inexistente
+- [X] T049 [US3] Escrever `app/api/pacotes/[codigo]/historico/route.test.ts` e implementar `app/api/pacotes/[codigo]/historico/route.ts` (GET): `exigirPapel("equipe")`, no máximo 200 eventos, 404 para pacote sem nenhum evento
+- [X] T050 [US3] Acrescentar casos em `lib/api.test.ts` e depois implementar `marcar`, `desmarcar`, `comentar` e `historico` em `lib/api.ts`
+- [X] T051 [US3] Escrever os testes e evoluir `components/CartaoPacote.tsx`:
   - Checkbox com rótulo para cada NC expandida, mostrando `marcadaPor`.
   - Botão "Mover para Corrigido", que marca todas as abertas visíveis.
   - Formulário de comentário com rótulo e lista de comentários.
   - Se o nome não estiver no `localStorage`, pede o nome antes de gravar (US3, cenário 4).
-- [ ] T052 [P] [US3] Escrever `components/Historico.test.tsx` e implementar `components/Historico.tsx` (lista de eventos com autor, data e hora e descrição legível de cada `eventos.tipo`), aberto a partir do card
+- [X] T052 [P] [US3] Escrever `components/Historico.test.tsx` e implementar `components/Historico.tsx` (lista de eventos com autor, data e hora e descrição legível de cada `eventos.tipo`), aberto a partir do card
 
 **Checkpoint**: US1 a US3, que são o núcleo do MVP. Quickstart, cenário 4.
 

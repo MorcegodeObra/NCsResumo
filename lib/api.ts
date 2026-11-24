@@ -1,5 +1,5 @@
 // Cliente fetch tipado usado pelos componentes (contracts/api.md).
-import type { Papel } from "@/lib/dominio/tipos";
+import type { CargaImportacao, Contagens, EventoVisao, PacoteVisao, Papel } from "@/lib/dominio/tipos";
 
 export class ErroApi extends Error {
   constructor(
@@ -47,3 +47,34 @@ export async function papel(): Promise<Papel | null> {
 }
 
 export { chamar };
+
+// ---- Importação e kanban ----
+
+export async function enviarImportacao(autor: string, carga: CargaImportacao): Promise<Contagens> {
+  return (await chamar<{ contagens: Contagens }>("/api/importacoes", json("POST", { autor, ...carga }))).contagens;
+}
+
+export async function listarPacotes(): Promise<PacoteVisao[]> {
+  return (await chamar<{ pacotes: PacoteVisao[] }>("/api/pacotes")).pacotes;
+}
+
+// ---- Ações no pacote ----
+
+const acaoNoPacote = async (codigo: string, caminho: string, init: RequestInit) =>
+  (await chamar<{ pacote: PacoteVisao }>(`/api/pacotes/${codigo}/${caminho}`, init)).pacote;
+
+export const marcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("POST", { autor, ncs }));
+export const desmarcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("DELETE", { autor, ncs }));
+export const comentar = (codigo: string, autor: string, texto: string) => acaoNoPacote(codigo, "comentarios", json("POST", { autor, texto }));
+
+export async function historico(codigo: string): Promise<EventoVisao[]> {
+  return (await chamar<{ eventos: EventoVisao[] }>(`/api/pacotes/${codigo}/historico`)).eventos;
+}
+
+// ---- Só o dono ----
+
+/** Resumo da IA; com `aviso`, a IA falhou e o card continua com o resumo local. */
+export const resumir = (codigo: string) =>
+  chamar<{ pacote: PacoteVisao; aviso?: string }>(`/api/pacotes/${codigo}/resumo`, json("POST"));
+
+export const excluir = (codigo: string) => chamar(`/api/pacotes/${codigo}`, json("DELETE"));
