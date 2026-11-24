@@ -35,6 +35,7 @@ describe("<Cards/>", () => {
     abrir("equipe", "100001");
     await screen.findByRole("article");
     expect(cards()).toEqual(["Pacote 100001"]);
+    expect(screen.getByRole("button", { name: "Fechar" })).toBeTruthy();
   });
 
   it("exporta só o que está na busca", async () => {
@@ -65,7 +66,8 @@ describe("<Cards/>", () => {
     vi.stubGlobal("confirm", () => true);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(resposta(200, { pacotes: [pacoteVisao()] })).mockResolvedValueOnce(resposta(200, { ok: true })));
     abrir("dono");
-    fireEvent.click(await screen.findByRole("button", { name: "Excluir" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir" }));
+    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
     expect(await screen.findByText(/Nenhum card/)).toBeTruthy();
     expect(within(document.body).queryByRole("article")).toBeNull();
   });

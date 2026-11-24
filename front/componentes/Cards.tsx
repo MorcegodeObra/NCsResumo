@@ -50,7 +50,7 @@ export default function Cards({ busca: inicial = "" }: { busca?: string }) {
       {achados.length ? (
         <div className="grade">
           {achados.map((p) => (
-            <CartaoPacote key={p.codigo} p={p} papel={papel} completo onMudou={trocar} onExcluido={tirar} />
+            <CartaoPacote key={p.codigo} p={p} papel={papel} abertoInicial={p.codigo === inicial} onMudou={trocar} onExcluido={tirar} />
           ))}
         </div>
       ) : (

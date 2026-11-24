@@ -7,13 +7,14 @@ import type { LinhaCard, NCImportada, PacoteImportado, PacoteVisao } from "@/com
 export interface Extras {
   marcacoes?: Record<string, string>; // id da NC → autor
   resolucao?: string;
+  prazo?: string | null; // prazo editado pela equipe
   resumo?: { linhas: LinhaCard[]; assinatura: string } | null; // linhas como a IA escreveu, sem locais
 }
 
 export function montarVisao(
   pacote: PacoteImportado & { saiuEm: string | null },
   ncs: NCImportada[],
-  { marcacoes = {}, resolucao = "", resumo = null }: Extras,
+  { marcacoes = {}, resolucao = "", prazo = null, resumo = null }: Extras,
 ): PacoteVisao {
   const comSituacao = ncs.map((nc) => ({ ...nc, situacao: situacaoNC(nc, nc.id in marcacoes) }));
   const visiveis = ncsVisiveis(comSituacao) as (NCImportada & { situacao: "aberta" | "corrigida" })[];
@@ -27,7 +28,7 @@ export function montarVisao(
     equipes: pacote.equipes,
     coluna: colunaDoPacote(pacote.saiuEm, visiveis),
     origem: visiveis.some((n) => n.origem === "fiscalizacao") || (!visiveis.length && ncs.some((n) => n.origem === "fiscalizacao")) ? "fiscalizacao" : "fvs",
-    prazo: menorPrazo(visiveis.map((n) => n.prazo)),
+    prazo: prazo ?? menorPrazo(visiveis.map((n) => n.prazo)),
     saiuEm: pacote.saiuEm,
     linhas: linhasIA
       ? linhasIA.map((l) => ({ texto: linhaComLocais(l.texto, visiveis.filter((n) => l.ncs.includes(n.id))), ncs: l.ncs }))

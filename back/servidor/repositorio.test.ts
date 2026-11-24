@@ -5,7 +5,7 @@ import { lerPlanilha } from "@/front/planilha/ler";
 import { importar as lerCarga } from "@/front/planilha/importar";
 import type { CargaImportacao } from "@/compartilhado/dominio/tipos";
 import { assinatura } from "@/back/dominio/assinatura";
-import { buscarPacote, definirResolucao, desmarcar, excluirPacote, historico, importar, listarPacotes, marcar, salvarResumo } from "./repositorio";
+import { ajustar, buscarPacote, definirResolucao, desmarcar, excluirPacote, historico, importar, listarPacotes, marcar, salvarResumo } from "./repositorio";
 
 let banco: Awaited<ReturnType<typeof bancoDeTeste>>;
 beforeEach(async () => (banco = await bancoDeTeste()));
@@ -214,6 +214,52 @@ describe("resolução e histórico", () => {
 
   it("pacote sem nenhum evento dá 404", async () => {
     await expect(historico(banco, "777")).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe("ajustar", () => {
+  beforeEach(async () => void (await importar(banco, "Maria", dia1())));
+  const editar = (pacote: object, ncs: { id: string; descricao?: string; sublocal?: string }[] = [], codigo = "100001") =>
+    ajustar(banco, codigo, "Ana", { pacote, ncs });
+
+  it("a edição aparece, tem evento com o antes e o depois, e sobrevive à importação", async () => {
+    const p = await editar({ equipes: "BETA", bloco: "Bloco 9", prazo: "2026-12-01" }, [{ id: "9001", descricao: "armadura exposta na viga", sublocal: "AP 7" }]);
+    const esperado = (v: typeof p) => {
+      expect(v).toMatchObject({ equipes: "BETA", bloco: "Bloco 9", pavimento: "3º PAV.", prazo: "2026-12-01" });
+      expect(v.linhas[0]).toEqual({ texto: "Armadura exposta na viga (AP 7)", ncs: ["9001"] });
+    };
+    esperado(p);
+    expect((await eventos()).filter((e) => e.tipo.includes("edita")).map((e) => [e.tipo, e.id_nc, e.autor, e.detalhe])).toEqual([
+      ["pacote_editado", null, "Ana", { campo: "equipes", antes: "ALFA", depois: "BETA" }],
+      ["pacote_editado", null, "Ana", { campo: "bloco", antes: "Bloco 1", depois: "Bloco 9" }],
+      ["pacote_editado", null, "Ana", { campo: "prazo", antes: "2026-10-21", depois: "2026-12-01" }],
+      ["nc_editada", "9001", "Ana", { campo: "descricao", antes: expect.any(String), depois: "armadura exposta na viga" }],
+      ["nc_editada", "9001", "Ana", { campo: "sublocal", antes: expect.any(String), depois: "AP 7" }],
+    ]);
+    await importar(banco, "Maria", dia1());
+    esperado(await buscarPacote(banco, "100001"));
+  });
+
+  it("vazio volta ao valor da planilha; repetir não gera evento", async () => {
+    await editar({ equipes: "BETA", prazo: "2026-12-01" });
+    const antes = (await eventos()).length;
+    await editar({ equipes: "BETA" });
+    expect((await eventos()).length).toBe(antes);
+    expect(await editar({ equipes: "", prazo: "" })).toMatchObject({ equipes: "ALFA", prazo: "2026-10-21" });
+    expect((await banco.consulta("SELECT ajustes FROM pacotes WHERE codigo = '100001'"))[0].ajustes).toEqual({});
+  });
+
+  it("editar a NC invalida o resumo da IA; editar a empresa não", async () => {
+    const { ncs } = await buscarPacote(banco, "100001");
+    await salvarResumo(banco, "100001", [{ texto: "Tudo", ncs: ncs.map((n) => n.id) }], assinatura(ncs));
+    expect((await editar({ equipes: "BETA" })).resumoIA).toBe(true);
+    expect((await editar({}, [{ id: "9001", descricao: "outra" }])).resumoIA).toBe(false);
+  });
+
+  it("404 para pacote ou NC que não é dele, sem gravar nada", async () => {
+    await expect(editar({ equipes: "X" }, [], "777")).rejects.toMatchObject({ status: 404 });
+    await expect(editar({ equipes: "X" }, [{ id: "9102", descricao: "x" }])).rejects.toMatchObject({ status: 404 });
+    expect((await buscarPacote(banco, "100001")).equipes).toBe("ALFA");
   });
 });
 

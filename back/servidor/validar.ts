@@ -1,4 +1,4 @@
-import type { CargaImportacao, NCImportada, PacoteImportado } from "@/compartilhado/dominio/tipos";
+import type { AjusteNC, AjustesPacote, CampoPacote, CargaImportacao, NCImportada, PacoteImportado } from "@/compartilhado/dominio/tipos";
 import { ErroHttp } from "./http";
 
 /** Texto de entrada não confiável: espaços normalizados e tamanho limitado. */
@@ -96,6 +96,38 @@ export function validarCargaImportacao(corpo: any): CargaImportacao {
     };
   });
   return { pacotes, ncs };
+}
+
+// specs/003; mesmos limites da importação
+const LIMITES_PACOTE: Record<CampoPacote, number> = { equipes: 200, tarefa: 200, bloco: 120, pavimento: 120, prazo: 10 };
+const LIMITES_NC = { descricao: 500, sublocal: 120 };
+
+function camposEditados<K extends string>(v: unknown, limites: Record<K, number>): Partial<Record<K, string>> {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) recusar("Edição inválida.");
+  const r: Partial<Record<K, string>> = {};
+  for (const [campo, valor] of Object.entries(v as object)) {
+    if (!Object.hasOwn(limites, campo) || typeof valor !== "string") recusar("Edição inválida.");
+    const s = str(valor, Infinity);
+    if (s.length > limites[campo as K]) recusar(`O campo ${campo} pode ter no máximo ${limites[campo as K]} caracteres.`);
+    r[campo as K] = s;
+  }
+  return r;
+}
+
+/** Corpo de PUT /api/pacotes/:codigo/ajustes. Vazio volta ao valor da planilha. */
+export function ajustes(corpo: any): AjustesPacote {
+  const pacote = camposEditados(corpo?.pacote ?? {}, LIMITES_PACOTE);
+  dataOuNull(pacote.prazo, DATA, "prazo");
+  const lista: unknown = corpo?.ncs ?? [];
+  if (!Array.isArray(lista) || lista.length > 2000) recusar("Edição inválida.");
+  const ncs: AjusteNC[] = (lista as any[]).map((n) => {
+    const { id, ...campos } = n ?? {};
+    if (typeof id !== "string" || !id || id.length > 40) recusar("NC sem identificador.");
+    return { id, ...camposEditados(campos, LIMITES_NC) };
+  });
+  if (new Set(ncs.map((n) => n.id)).size !== ncs.length) recusar("NC repetida na edição.");
+  if (!Object.keys(pacote).length && !ncs.length) recusar("Nada para editar.");
+  return { pacote, ncs };
 }
 
 /** Código de pacote vindo da URL; fora do formato, o pacote não existe. */

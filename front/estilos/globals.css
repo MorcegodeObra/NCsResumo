@@ -59,6 +59,7 @@ button, input, textarea { font: inherit; }
 .corpo { padding:8px 10px; flex:1; }
 .corpo h3 { margin:0; font-size:20px; line-height:1.15; }
 .servico { margin:2px 0 6px; font-size:15px; color:#404040; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+.servico .situacao:first-of-type { margin-left:auto; }
 .situacao { font-size:11px; font-weight:700; padding:2px 6px; border-radius:6px; background:#eee; color:#333; white-space:nowrap; }
 .situacao.aberto { background:#fde2e1; color:#8a1c1c; }
 .situacao.corrigido { background:#fff1c2; color:#6b4e00; }
@@ -71,7 +72,7 @@ button, input, textarea { font: inherit; }
 .ncs { margin:2px 0 6px 14px; padding:0; list-style:none; font-size:12px; }
 .ncs li { padding:3px 0; border-bottom:1px dashed #e0e0e0; }
 .ncs small { display:block; color:var(--cinza); }
-.rodape { display:grid; grid-template-columns: 0.8fr 1.3fr 1fr; border-top:1px solid #999; }
+.rodape { display:grid; grid-template-columns: auto 1.3fr 1fr; border-top:1px solid #999; }
 .rodape > div { padding:5px 10px; border-right:1px solid #ccc; min-width:0; }
 .rodape > div:last-child { border-right:0; }
 .rodape small { display:block; font-size:9px; color:var(--cinza); }
@@ -83,6 +84,26 @@ button, input, textarea { font: inherit; }
 .resolucao { margin-top:8px; padding-top:6px; border-top:1px dashed #999; font-size:13px; }
 .resolucao p { margin:2px 0 0; white-space:pre-line; }
 .so-impressao { display:none; }
+
+/* Fechado: tamanho fixo. Aberto: na íntegra, ocupando a linha toda */
+.grade .cartao { width:100%; }
+.cartao.fechado { height:340px; }
+.cartao.fechado .corpo { min-height:0; overflow:hidden; -webkit-mask-image:linear-gradient(#000 80%, transparent); mask-image:linear-gradient(#000 80%, transparent); }
+.cartao.fechado .corpo h3 { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.cartao.fechado .faixa span, .cartao.fechado .peq { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.grade .cartao:not(.fechado) { grid-column:1 / -1; max-width:760px; }
+
+/* Card enxuto do kanban */
+.enxuto { width:100%; padding:10px; gap:6px; font-size:14px; }
+.enxuto h3 { margin:0; font-size:16px; line-height:1.2; }
+.enxuto p { margin:0; }
+.enxuto .botao { padding:6px 10px; font-size:13px; }
+
+/* Edição */
+.editar { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.editar .campo { flex:none; }
+.editar fieldset { display:flex; flex-direction:column; gap:4px; margin:0; padding:6px 8px 8px; border:1px solid var(--borda); border-radius:8px; min-width:0; }
+.editar fieldset textarea, .editar fieldset input { width:100%; padding:6px 8px; border:1px solid #767676; border-radius:8px; resize:vertical; }
 
 /* Ações do card: marcar, histórico, resolução */
 .acoes { border-top:1px solid #ccc; padding:8px 10px; font-size:13px; }
@@ -97,11 +118,22 @@ a.botao { color:inherit; text-decoration:none; }
 .resolver label { font-weight:700; }
 .resolver textarea { width:100%; padding:6px 8px; border:1px solid #767676; border-radius:8px; resize:vertical; }
 
+/* Impressão: só Aberto e Corrigido, na íntegra, em duas colunas */
+@page { size:A4; margin:10mm; }
 @media print {
   body { background:#fff; }
-  main { padding:0; }
-  h1, .coluna > h2, .cartao.concluido, .no-print { display:none !important; }
+  main { max-width:none; padding:0; }
+  h1, .coluna > h2, .cartao.concluido, .no-print, .ncs, .grupo::before { display:none !important; }
   .so-impressao { display:block; }
-  .kanban, .cards, .grade { display:block; }
-  .cartao { width:var(--largura-card); margin:0 0 12px; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .kanban, .cards { display:block; }
+  .grade { display:block; columns:2; column-gap:5mm; padding:0 1px; }
+  .grade .cartao, .grade .cartao:not(.fechado) { display:block; width:100%; max-width:none; height:auto; margin:0 0 3mm; overflow:visible; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .cartao.fechado .corpo { overflow:visible; -webkit-mask-image:none; mask-image:none; }
+  .cartao.fechado .corpo h3 { display:block; }
+  .cartao.fechado .faixa span, .cartao.fechado .peq { white-space:normal; }
+  .corpo h3 { font-size:15px; }
+  .servico { font-size:12px; }
+  .resumo, .resolucao { font-size:11px; }
+  .rodape { break-inside:avoid; }
+  .rodape strong { font-size:13px; }
 }

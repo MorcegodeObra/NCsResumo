@@ -1,12 +1,13 @@
 "use client";
-import Link from "next/link";
 import { useId, useState } from "react";
+import Editar from "./Editar";
 import Historico from "./Historico";
-import { definirResolucao, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
+import { ajustar, definirResolucao, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
 import { dataBR } from "@/compartilhado/dominio/datas";
-import type { Coluna, LinhaCard, NCVisao, PacoteVisao, Papel } from "@/compartilhado/dominio/tipos";
+import { idsAbertas, type AjustesPacote, type Coluna, type LinhaCard, type NCVisao, type PacoteVisao, type Papel } from "@/compartilhado/dominio/tipos";
 import { exigirNome } from "@/front/lib/nome";
+import { useAcao } from "@/front/lib/useAcao";
 
 export const NOME_COLUNA: Record<Coluna, string> = { aberto: "Aberto", corrigido: "Corrigido", concluido: "Concluído" };
 
@@ -51,35 +52,22 @@ function Grupo({ linha, ncs, travado, onMarcar }: { linha: LinhaCard; ncs: NCVis
 interface Props {
   p: PacoteVisao;
   papel?: Papel;
-  /** Página de cards: com histórico e as ações do dono. No kanban, o card é enxuto. */
-  completo?: boolean;
+  abertoInicial?: boolean;
   onMudou?: (p: PacoteVisao) => void;
   onExcluido?: (codigo: string) => void;
 }
 
-export default function CartaoPacote({ p, papel = "equipe", completo = false, onMudou, onExcluido }: Props) {
-  const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState("");
+export default function CartaoPacote({ p, papel = "equipe", abertoInicial = false, onMudou, onExcluido }: Props) {
+  const { ocupado, erro, setErro, fazer } = useAcao();
+  const [aberto, setAberto] = useState(abertoInicial);
+  const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState(p.resolucao);
   const [salva, setSalva] = useState(false);
   const [verHistorico, setVerHistorico] = useState(false);
   const idResolucao = useId();
   const idHistorico = useId();
-  const acoesDoDono = completo && papel === "dono";
+  const acoesDoDono = aberto && papel === "dono";
 
-  /** Uma ação por vez; ignora o clique em vez de desabilitar, para o foco do teclado não se perder. */
-  async function fazer(acao: () => Promise<void>) {
-    if (ocupado) return;
-    setErro("");
-    setOcupado(true);
-    try {
-      await acao();
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível gravar.");
-    } finally {
-      setOcupado(false);
-    }
-  }
   const mudar = (acao: (autor: string) => Promise<PacoteVisao>) =>
     fazer(async () => {
       // Fora do onMudou?.(): sem o callback, o argumento nem seria avaliado e nada seria gravado.
@@ -87,7 +75,6 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
       onMudou?.(novo);
     });
 
-  const abertas = p.ncs.filter((n) => n.situacao === "aberta").map((n) => n.id);
   const alternar = (n: NCVisao) => mudar((autor) => (n.situacao === "aberta" ? marcar : desmarcar)(p.codigo, autor, [n.id]));
 
   function salvarResolucao(e: React.FormEvent) {
@@ -100,6 +87,13 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
       onMudou?.(novo);
     });
   }
+
+  const salvarEdicao = (a: AjustesPacote) =>
+    mudar(async (autor) => {
+      const novo = await ajustar(p.codigo, autor, a);
+      setEditando(false);
+      return novo;
+    });
 
   const gerarResumo = () =>
     fazer(async () => {
@@ -117,7 +111,7 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
   }
 
   return (
-    <article className={`cartao ${p.origem} ${p.coluna}`} aria-label={`Pacote ${p.codigo}`} aria-busy={ocupado}>
+    <article className={`cartao ${p.origem} ${p.coluna}${aberto ? "" : " fechado"}`} aria-label={`Pacote ${p.codigo}`} aria-busy={ocupado}>
       <header className="faixa">
         <span>ORIGEM: {NOME_ORIGEM[p.origem]}</span>
         <span>EMPRESA: {p.equipes || "________"}</span>
@@ -132,9 +126,10 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
         </p>
         {p.saiuEm && <p className="cinza">Saiu da planilha em {dataBR(p.saiuEm)}</p>}
         <ul className="resumo">
-          {p.linhas.map((l, i) => (
-            <Grupo key={i} linha={l} ncs={p.ncs} travado={!!p.saiuEm} onMarcar={alternar} />
-          ))}
+          {p.linhas.map((l, i) =>
+            // Fechado, a linha é só texto: um botão cortado pelo tamanho fixo receberia o foco sem aparecer.
+            aberto ? <Grupo key={i} linha={l} ncs={p.ncs} travado={!!p.saiuEm} onMarcar={alternar} /> : <li key={i}>{l.texto}</li>,
+          )}
         </ul>
         {p.resolucao && (
           // Quem edita já vê o texto no campo; este é o da leitura e o da impressão.
@@ -160,19 +155,23 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
       </footer>
       <div className="acoes no-print">
         <div className="botoes">
-          {p.coluna === "aberto" && (
-            <button type="button" className="botao" onClick={() => mudar((autor) => marcar(p.codigo, autor, abertas))}>
+          <button type="button" className="botao" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>
+            {aberto ? "Fechar" : "Abrir"}
+          </button>
+          {aberto && p.coluna === "aberto" && (
+            <button type="button" className="botao" onClick={() => mudar((autor) => marcar(p.codigo, autor, idsAbertas(p)))}>
               Mover para Corrigido
             </button>
           )}
-          {completo ? (
+          {aberto && (
+            <button type="button" className="botao" aria-expanded={editando} onClick={() => setEditando(!editando)}>
+              Editar
+            </button>
+          )}
+          {aberto && (
             <button type="button" className="botao" aria-expanded={verHistorico} aria-controls={idHistorico} onClick={() => setVerHistorico(!verHistorico)}>
               Histórico
             </button>
-          ) : (
-            <Link className="botao" href={`/cards?q=${p.codigo}`}>
-              Abrir card
-            </Link>
           )}
           {acoesDoDono && p.linhas.length > 0 && (
             <button type="button" className="botao" onClick={gerarResumo}>
@@ -187,7 +186,8 @@ export default function CartaoPacote({ p, papel = "equipe", completo = false, on
         </div>
         {ocupado && <p className="cinza" aria-live="polite">Aguarde…</p>}
         {erro && <p role="alert" className="erro">{erro}</p>}
-        <div id={idHistorico}>{verHistorico && <Historico codigo={p.codigo} />}</div>
+        {aberto && editando && <Editar p={p} onSalvar={salvarEdicao} onCancelar={() => setEditando(false)} />}
+        <div id={idHistorico}>{aberto && verHistorico && <Historico codigo={p.codigo} versao={p} />}</div>
         {acoesDoDono && (
           <form className="resolver" onSubmit={salvarResolucao}>
             <label htmlFor={idResolucao}>Possível resolução</label>

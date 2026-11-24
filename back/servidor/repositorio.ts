@@ -1,9 +1,9 @@
 import "server-only";
 // Acesso ao banco (data-model.md). Toda mudança gera evento; a importação não toca em
-// marcacoes nem na resolucao (Princípio V).
+// marcacoes, resolucao nem ajustes (Princípio V).
 import { situacaoNC } from "@/back/dominio/situacao";
 import { montarVisao } from "@/back/dominio/visao";
-import type { CargaImportacao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { AjustesPacote, CampoPacote, CargaImportacao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
 import type { Banco, Consultor } from "./banco";
 import { ErroHttp } from "./http";
 
@@ -117,15 +117,21 @@ type LinhaPacote = {
   codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
   resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
   resolucao: string;
+  ajustes: Partial<Record<CampoPacote, string>>;
 };
 
 async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Promise<PacoteVisao[]> {
   const pacotes = await banco.consulta<LinhaPacote>(
-    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao FROM pacotes ${filtro}`,
+    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao, ajustes FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
-  const ncs = (await banco.consulta<LinhaNC>(`SELECT ${COLUNAS_NC} FROM ncs WHERE codigo_pacote = ANY($1::text[]) ORDER BY id`, [codigos])).map(paraNC);
+  const ncs = (
+    await banco.consulta<LinhaNC & { ajustes: { descricao?: string; sublocal?: string } }>(
+      `SELECT ${COLUNAS_NC}, ajustes FROM ncs WHERE codigo_pacote = ANY($1::text[]) ORDER BY id`,
+      [codigos],
+    )
+  ).map((l) => ({ ...paraNC(l), ...l.ajustes }));
   const marcacoes = Object.fromEntries(
     (await banco.consulta<{ id_nc: string; autor: string }>(
       "SELECT m.id_nc, m.autor FROM marcacoes m JOIN ncs n ON n.id = m.id_nc WHERE n.codigo_pacote = ANY($1::text[])",
@@ -133,13 +139,14 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
     )).map((m) => [m.id_nc, m.autor]),
   );
   return pacotes
-    .map((p) =>
+    .map(({ ajustes: { prazo, ...ajustes }, ...p }) =>
       montarVisao(
-        { codigo: p.codigo, tarefa: p.tarefa, bloco: p.bloco, pavimento: p.pavimento, equipes: p.equipes, saiuEm: p.saiu_em },
+        { codigo: p.codigo, tarefa: p.tarefa, bloco: p.bloco, pavimento: p.pavimento, equipes: p.equipes, saiuEm: p.saiu_em, ...ajustes },
         ncs.filter((n) => n.codigoPacote === p.codigo),
         {
           marcacoes,
           resolucao: p.resolucao,
+          prazo,
           resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
@@ -192,6 +199,38 @@ export async function definirResolucao(banco: Banco, codigo: string, depois: str
       await gravarEventos(tx, [{ codigo, idNc: null, tipo: "resolucao_alterada", detalhe: { antes: p.resolucao, depois }, autor: AUTOR_DONO }]);
     }
     return buscarPacote(tx, codigo);
+  });
+}
+
+/** Edição da equipe por cima da planilha; os eventos são a diferença do que o card mostrava para o que passou a mostrar. */
+export async function ajustar(banco: Banco, codigo: string, autor: string, { pacote, ncs }: AjustesPacote): Promise<PacoteVisao> {
+  // Vazio vira null, que sai do jsonb: volta a valer a planilha.
+  const json = (campos: object) => JSON.stringify(campos, (_, v) => (v === "" ? null : v));
+  return banco.transacao(async (tx) => {
+    await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const antes = await buscarPacote(tx, codigo);
+    if (!ncs.every((n) => antes.ncs.some((a) => a.id === n.id))) throw new ErroHttp(404, "A NC não está mais neste card.");
+
+    await tx.consulta("UPDATE pacotes SET ajustes = jsonb_strip_nulls(ajustes || $2::text::jsonb) WHERE codigo = $1", [codigo, json(pacote)]);
+    await tx.consulta(
+      `UPDATE ncs SET ajustes = jsonb_strip_nulls(ncs.ajustes || a.campos::jsonb)
+       FROM unnest($1::text[], $2::text[]) AS a(id, campos) WHERE ncs.id = a.id`,
+      [ncs.map((n) => n.id), ncs.map(({ id: _, ...campos }) => json(campos))],
+    );
+
+    const depois = await buscarPacote(tx, codigo);
+    const evs: Evento[] = [];
+    for (const campo of ["equipes", "tarefa", "bloco", "pavimento", "prazo"] as const)
+      if (antes[campo] !== depois[campo])
+        evs.push({ codigo, idNc: null, tipo: "pacote_editado", detalhe: { campo, antes: antes[campo], depois: depois[campo] }, autor });
+    for (const { id } of ncs) {
+      const a = antes.ncs.find((n) => n.id === id)!;
+      const d = depois.ncs.find((n) => n.id === id)!;
+      for (const campo of ["descricao", "sublocal"] as const)
+        if (a[campo] !== d[campo]) evs.push({ codigo, idNc: id, tipo: "nc_editada", detalhe: { campo, antes: a[campo], depois: d[campo] }, autor });
+    }
+    await gravarEventos(tx, evs);
+    return depois;
   });
 }
 

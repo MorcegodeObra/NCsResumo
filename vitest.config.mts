@@ -13,5 +13,10 @@ export default defineConfig({
     environment: "node",
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["node_modules/**", ".next/**"],
+    // Cada teste de banco sobe um PGlite; com todos os núcleos ocupados, o padrão de 5 s estoura.
+    // Um worker por núcleo chegou a 5 GB e o sistema matava o VS Code por falta de memória.
+    maxWorkers: 2,
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 });

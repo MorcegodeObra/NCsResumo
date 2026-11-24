@@ -2,12 +2,13 @@
 
 Site para acompanhar as não conformidades (NCs) da obra a partir da planilha diária de inspeções.
 
-A especificação está em `specs/001-mvp-planilha-kanban/` e `specs/002-paginas-resolucao-descricao/`.
+A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-resolucao-descricao/` e
+`specs/003-kanban-enxuto-edicao-impressao/`.
 
 ## Páginas
 
-- **Kanban** (`/`): marcar NCs, mover para Corrigido e abrir o card.
-- **Cards** (`/cards`): busca, possível resolução, histórico, exportação, IA e exclusão.
+- **Kanban** (`/`): só o local e o serviço de cada card; mover para Corrigido e abrir o card.
+- **Cards** (`/cards`): cards de tamanho fixo que abrem na íntegra; busca, marcação de NCs, edição, possível resolução, histórico, exportação, IA e exclusão.
 - **Importar** (`/importar`): passo a passo e resultado da importação.
 
 Toda página mostra o nome, o papel e o botão **Sair**, que apaga a sessão e o nome guardado no aparelho.
@@ -34,7 +35,8 @@ saiu (a planilha só traz pacotes reprovados). Importar a mesma planilha de novo
 
 Em cada card, a equipe marca as NCs corrigidas (ou usa **Mover para Corrigido**, que marca todas as
 abertas) e vê o **Histórico**, sempre com o nome e o horário. O dono escreve a **possível resolução**,
-que todos leem. A importação seguinte não apaga nada disso.
+que todos leem. Em **Editar**, qualquer pessoa corrige empresa, serviço, bloco, pavimento, prazo e a
+descrição e o local de cada NC; vazio volta ao valor da planilha. A importação seguinte não apaga nada disso.
 
 **O arquivo é lido no seu aparelho e não sai dele.** Se faltar alguma das 29 colunas, a
 importação é recusada inteira, com o nome da coluna que falta. Quando um pacote tem NC de
@@ -48,7 +50,7 @@ NC, o identificador, o item de inspeção, a origem (FVS ou fiscalização), o t
 local, o prazo, a data real de correção e a situação e a data da inspeção mais recente do item.
 **Não saem** os nomes de inspetores e colaboradores (`Usuário Inspeção`, `Colaborador NC`), o
 endereço, as ações tomadas, nem os itens sem NC. Além disso vão o nome que a pessoa informou, para
-o histórico, e a possível resolução escrita pelo dono.
+o histórico, e a possível resolução escrita pelo dono e as edições dos cards.
 
 ## Exportar
 
@@ -56,7 +58,7 @@ Os botões da página **Cards** usam só os pacotes de Aberto e Corrigido que es
 
 - **Copiar texto**: os cards em texto, para o WhatsApp.
 - **Baixar CSV**: colunas B a K da aba NCs da planilha de controle, mais a possível resolução na L; cole a partir de **B2**.
-- **Imprimir**: os cards, sem os botões.
+- **Imprimir**: os cards na íntegra, em duas colunas, sem os botões (em **Cards**).
 
 ## Só o dono: IA e exclusão
 
@@ -87,8 +89,8 @@ variáveis faltar, se o segredo tiver menos de 32 caracteres ou se as duas senha
 
 ```bash
 npm install
-cp .env.example .env.local   # preencha DATABASE_URL, SENHA_EQUIPE, SENHA_DONO e SEGREDO_SESSAO
-node --env-file=.env.local back/scripts/migrar.mjs   # cria as tabelas (pode rodar de novo sem problema)
+# crie o .env com as variáveis da tabela abaixo
+node --env-file=.env back/scripts/migrar.mjs   # cria as tabelas (pode rodar de novo sem problema)
 npm run dev                  # http://localhost:3000
 npm test                     # testes (Vitest)
 ```
@@ -109,7 +111,7 @@ No Vercel, crie o banco pelo marketplace (**Storage → Neon**) e ligue ao proje
 `DATABASE_URL`. Rode `npm run db:migrar` com essa URL uma vez (e de novo sempre que o
 `back/db/schema.sql` mudar). As outras variáveis ficam em **Settings → Environment Variables**
 (Production e Preview). **Nunca
-commite o `.env.local`.**
+commite o `.env`.**
 
 ## Estrutura
 

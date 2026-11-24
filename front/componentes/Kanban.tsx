@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import CartaoPacote, { NOME_COLUNA } from "./CartaoPacote";
+import CartaoKanban from "./CartaoKanban";
+import { NOME_COLUNA } from "./CartaoPacote";
 import { usePacotes } from "@/front/lib/usePacotes";
 import type { Coluna } from "@/compartilhado/dominio/tipos";
 
@@ -27,7 +28,7 @@ export default function Kanban() {
             </h2>
             <div className="cards">
               {lista.map((p) => (
-                <CartaoPacote key={p.codigo} p={p} onMudou={trocar} />
+                <CartaoKanban key={p.codigo} p={p} onMudou={trocar} />
               ))}
             </div>
           </section>

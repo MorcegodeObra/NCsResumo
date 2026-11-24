@@ -67,6 +67,20 @@ export interface PacoteVisao {
   resolucao: string;
 }
 
+export const idsAbertas = (p: PacoteVisao) => p.ncs.filter((n) => n.situacao === "aberta").map((n) => n.id);
+
+/** Edição da equipe (specs/003); só o que mudou, e vazio volta ao valor da planilha. */
+export type CampoPacote = "equipes" | "tarefa" | "bloco" | "pavimento" | "prazo";
+export interface AjusteNC {
+  id: string;
+  descricao?: string;
+  sublocal?: string;
+}
+export interface AjustesPacote {
+  pacote: Partial<Record<CampoPacote, string>>;
+  ncs: AjusteNC[];
+}
+
 export interface EventoVisao {
   tipo: string;
   idNc: string | null;

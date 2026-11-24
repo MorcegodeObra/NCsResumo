@@ -42,6 +42,10 @@ CREATE TABLE IF NOT EXISTS marcacoes (
   em    timestamptz NOT NULL DEFAULT now()
 );
 
+-- (b) edições da equipe por cima do que veio da planilha; a importação nunca escreve aqui (specs/003)
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS ajustes jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS ajustes jsonb NOT NULL DEFAULT '{}'::jsonb;
+
 -- (c) histórico; sem FK para sobreviver à exclusão do pacote
 CREATE TABLE IF NOT EXISTS eventos (
   id            bigserial PRIMARY KEY,

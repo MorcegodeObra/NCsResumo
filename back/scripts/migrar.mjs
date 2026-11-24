@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
-  console.error("Defina DATABASE_URL (ex.: node --env-file=.env.local back/scripts/migrar.mjs).");
+  console.error("Defina DATABASE_URL (ex.: node --env-file=.env back/scripts/migrar.mjs).");
   process.exit(1);
 }
 const sql = postgres(url, { max: 1 });
