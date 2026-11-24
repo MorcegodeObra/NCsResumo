@@ -1,7 +1,8 @@
 node_modules
 .next
 .env*
-!.env.example
+.claude/
+.specify/
 next-env.d.ts
 *.tsbuildinfo
 *.xlsx
