@@ -77,7 +77,7 @@ variáveis faltar, se o segredo tiver menos de 32 caracteres ou se as duas senha
 ```bash
 npm install
 cp .env.example .env.local   # preencha DATABASE_URL, SENHA_EQUIPE, SENHA_DONO e SEGREDO_SESSAO
-node --env-file=.env.local scripts/migrar.mjs   # cria as tabelas (pode rodar de novo sem problema)
+node --env-file=.env.local back/scripts/migrar.mjs   # cria as tabelas (pode rodar de novo sem problema)
 npm run dev                  # http://localhost:3000
 npm test                     # testes (Vitest)
 ```
@@ -96,19 +96,16 @@ npm test                     # testes (Vitest)
 
 No Vercel, crie o banco pelo marketplace (**Storage → Neon**) e ligue ao projeto: isso cria a
 `DATABASE_URL`. Rode `npm run db:migrar` com essa URL uma vez (e de novo sempre que o
-`db/schema.sql` mudar). As outras variáveis ficam em **Settings → Environment Variables**
+`back/db/schema.sql` mudar). As outras variáveis ficam em **Settings → Environment Variables**
 (Production e Preview). **Nunca
 commite o `.env.local`.**
 
 ## Estrutura
 
 ```
-app/              páginas e rotas da API (Next.js App Router)
-components/       interface (cards, kanban, importação, exportação, login)
-lib/dominio/      regras puras: normalização, situação, agrupamento (interface e servidor)
-lib/planilha/     leitura da planilha, só no navegador
-lib/servidor/     banco, sessão, validação e IA, só no servidor
-db/schema.sql     tabelas do banco
-tests/fixtures/   planilha fictícia usada nos testes
+app/              casca exigida pelo Next.js: só aponta as páginas para front/ e as rotas para back/
+front/            interface: componentes, estilos, leitura da planilha, exportação e cliente da API
+back/             servidor: rotas, banco, sessão, validação, IA, regras, db/schema.sql e migração
+compartilhado/    tipos e regras que os dois lados usam, e a planilha fictícia dos testes
 specs/            especificação, plano e tarefas (Spec Kit)
 ```

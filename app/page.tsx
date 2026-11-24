@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import Entrar from "@/components/Entrar";
-import Quadro from "@/components/Quadro";
-import { papel as lerPapel, quandoSessaoExpirar } from "@/lib/api";
-import type { Papel } from "@/lib/dominio/tipos";
+import Entrar from "@/front/componentes/Entrar";
+import Quadro from "@/front/componentes/Quadro";
+import { papel as lerPapel, quandoSessaoExpirar } from "@/front/lib/api";
+import type { Papel } from "@/compartilhado/dominio/tipos";
 
 export default function Pagina() {
   // undefined = ainda verificando a sessão; null = sem sessão.
