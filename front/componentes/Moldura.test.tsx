@@ -27,7 +27,7 @@ describe("<Moldura/>", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { papel: "dono" })));
     abrir();
     expect(await screen.findByText("conteúdo do dono")).toBeTruthy();
-    expect(screen.getAllByRole("link").map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Kanban", "/"], ["Cards", "/cards"], ["Importar", "/importar"]]);
+    expect(screen.getAllByRole("link").map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Kanban", "/"], ["Cards", "/cards"], ["Tabela", "/tabela"], ["Importar", "/importar"]]);
     expect(screen.getByText("Ana · Dono")).toBeTruthy();
   });
 

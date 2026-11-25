@@ -46,6 +46,10 @@ CREATE TABLE IF NOT EXISTS marcacoes (
 ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS ajustes jsonb NOT NULL DEFAULT '{}'::jsonb;
 ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS ajustes jsonb NOT NULL DEFAULT '{}'::jsonb;
 
+-- (b) conclusão dada pelo dono e as NCs que ela cobre; a importação só a derruba (specs/004)
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS concluido_em  timestamptz;
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS concluido_ncs jsonb NOT NULL DEFAULT '[]'::jsonb;
+
 -- (c) histórico; sem FK para sobreviver à exclusão do pacote
 CREATE TABLE IF NOT EXISTS eventos (
   id            bigserial PRIMARY KEY,

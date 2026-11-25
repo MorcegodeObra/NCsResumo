@@ -11,6 +11,7 @@ export const pacoteVisao = (x: Partial<PacoteVisao> = {}): PacoteVisao => ({
   origem: "fiscalizacao",
   prazo: "2026-10-21",
   saiuEm: null,
+  concluidoEm: null,
   resumoIA: false,
   linhas: [
     { texto: "Esquadro entre alvenarias (AP 1-2, HALL A-B) ×2", ncs: ["9001", "9002"] },

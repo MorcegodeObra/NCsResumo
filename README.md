@@ -2,13 +2,15 @@
 
 Site para acompanhar as não conformidades (NCs) da obra a partir da planilha diária de inspeções.
 
-A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-resolucao-descricao/` e
-`specs/003-kanban-enxuto-edicao-impressao/`.
+A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-resolucao-descricao/`,
+`specs/003-kanban-enxuto-edicao-impressao/` e `specs/004-ficha-conclusao-quadro/`.
 
 ## Páginas
 
-- **Kanban** (`/`): só o local e o serviço de cada card; mover para Corrigido e abrir o card.
-- **Cards** (`/cards`): cards de tamanho fixo que abrem na íntegra; busca, marcação de NCs, edição, possível resolução, histórico, exportação, IA e exclusão.
+- **Kanban** (`/`): quadro com o local e o serviço de cada card; clicar abre a ficha, e arrastar ou o botão move. Só o dono vê Concluído.
+- **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1").
+- **Ficha** (`/cards/<código>`): tudo de um pacote numa página: NCs, marcação, edição, possível resolução, histórico, impressão, IA, conclusão e exclusão.
+- **Tabela** (`/tabela`, só o dono): abertos, corrigidos e concluídos.
 - **Importar** (`/importar`): passo a passo e resultado da importação.
 
 Toda página mostra o nome, o papel e o botão **Sair**, que apaga a sessão e o nome guardado no aparelho.
@@ -33,7 +35,10 @@ pacotes ficam num kanban **Aberto → Corrigido → Concluído**, na coluna da N
 Um pacote que estava no quadro e não veio na planilha do dia vai para Concluído, com a data em que
 saiu (a planilha só traz pacotes reprovados). Importar a mesma planilha de novo não duplica nada.
 
-Em cada card, a equipe marca as NCs corrigidas (ou usa **Mover para Corrigido**, que marca todas as
+O dono também pode **Mover para Concluído** um pacote em Corrigido, e desfazer. A conclusão cai sozinha
+quando aparece NC nova ou alguma NC volta a ficar aberta. A equipe não recebe os pacotes concluídos.
+
+Em cada ficha, a equipe marca as NCs corrigidas (ou usa **Mover para Corrigido**, que marca todas as
 abertas) e vê o **Histórico**, sempre com o nome e o horário. O dono escreve a **possível resolução**,
 que todos leem. Em **Editar**, qualquer pessoa corrige empresa, serviço, bloco, pavimento, prazo e a
 descrição e o local de cada NC; vazio volta ao valor da planilha. A importação seguinte não apaga nada disso.
@@ -60,7 +65,7 @@ Os botões da página **Cards** usam só os pacotes de Aberto e Corrigido que es
 - **Baixar CSV**: colunas B a K da aba NCs da planilha de controle, mais a possível resolução na L; cole a partir de **B2**.
 - **Imprimir**: os cards na íntegra, em duas colunas, sem os botões (em **Cards**).
 
-## Só o dono: IA e exclusão
+## Só o dono: IA, conclusão e exclusão
 
 - **Resumir com IA** (um card) e **Resumir todos** (um por vez) juntam itens parecidos em menos linhas.
   Os locais e as contagens são calculados pelo servidor, e o resumo que deixar alguma NC de fora é
@@ -79,7 +84,7 @@ Há dois níveis, verificados no servidor:
 
 - **Equipe**: senha compartilhada (`SENHA_EQUIPE`). Antes da primeira mudança, a pessoa informa o
   nome, que vai para o histórico (não é conferido).
-- **Dono**: senha própria (`SENHA_DONO`), que libera também a IA e a exclusão definitiva.
+- **Dono**: senha própria (`SENHA_DONO`), que libera também a IA, a conclusão, a tabela e a exclusão definitiva.
 
 A sessão fica num cookie assinado com `SEGREDO_SESSAO` e dura 12 horas. Se alguma dessas três
 variáveis faltar, se o segredo tiver menos de 32 caracteres ou se as duas senhas forem iguais,

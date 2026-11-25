@@ -17,7 +17,7 @@ const pacotes = [
   pacoteVisao({ codigo: "100002", bloco: "Bloco 2", pavimento: "TÉRREO", coluna: "corrigido", origem: "fvs" }),
   pacoteVisao({ codigo: "100003", bloco: "Bloco 3", pavimento: "2º PAV.", coluna: "concluido", saiuEm: "2026-11-20T13:00:00Z", linhas: [], ncs: [] }),
 ];
-const abrir = () => render(<SessaoTeste><Kanban /></SessaoTeste>);
+const abrir = (papel: "equipe" | "dono" = "dono") => render(<SessaoTeste papel={papel}><Kanban /></SessaoTeste>);
 
 describe("<Kanban/>", () => {
   it("carrega GET /api/pacotes e mostra as 3 colunas com título e contagem", async () => {
@@ -35,18 +35,36 @@ describe("<Kanban/>", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
     abrir();
     const card = await screen.findByRole("article", { name: "Pacote 100001" });
-    expect(card.textContent).toBe("Bloco 1 · 3º PAV.AlvenariaMover para CorrigidoAbrir card");
-    expect(within(card).getByRole("link", { name: /Abrir card/ }).getAttribute("href")).toBe("/cards?q=100001");
-    for (const c of ["100002", "100003"])
-      expect(within(screen.getByRole("article", { name: `Pacote ${c}` })).queryByRole("button")).toBeNull();
+    expect(card.textContent).toBe("Bloco 1 · 3º PAV.AlvenariaMover para Corrigido");
+    expect(within(card).getByRole("link").getAttribute("href")).toBe("/cards/100001");
+    expect(within(screen.getByRole("article", { name: "Pacote 100002" })).getByRole("button").textContent).toBe("Mover para Concluído");
+    expect(within(screen.getByRole("article", { name: "Pacote 100003" })).queryByRole("button")).toBeNull();
   });
 
-  it("na impressão, o card leva a coluna (Concluído some) e os botões ficam de fora", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
+  it("a equipe não vê Concluído nem pode concluir", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: pacotes.slice(0, 2) })));
+    abrir("equipe");
+    await screen.findByRole("region", { name: "Corrigido (1)" });
+    expect(screen.queryByRole("region", { name: /Concluído/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mover para Concluído" })).toBeNull();
+  });
+
+  it("arrastar para a coluna certa move; para outra, não", async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(resposta(200, { pacotes }))
+      .mockResolvedValueOnce(resposta(200, { pacote: pacoteVisao({ codigo: "100002", coluna: "concluido" }) }));
+    vi.stubGlobal("fetch", f);
     abrir();
-    const card = await screen.findByRole("article", { name: "Pacote 100003" });
-    expect(card.classList.contains("concluido")).toBe(true);
-    expect(within(card).getByRole("link").closest(".no-print")).toBeTruthy();
+    const card = await screen.findByRole("article", { name: "Pacote 100002" });
+    const pegar = () => fireEvent.dragStart(card, { dataTransfer: { setData() {} } });
+    pegar();
+    fireEvent.drop(screen.getByRole("region", { name: /Aberto/ }));
+    expect(f).toHaveBeenCalledTimes(1);
+    pegar();
+    fireEvent.drop(screen.getByRole("region", { name: /Concluído/ }));
+    expect(await screen.findByRole("region", { name: "Concluído (2)" })).toBeTruthy();
+    expect(f.mock.calls[1]).toMatchObject(["/api/pacotes/100002/conclusao", { method: "POST" }]);
   });
 
   it("sem nome: pede antes de gravar; o erro aparece no card", async () => {

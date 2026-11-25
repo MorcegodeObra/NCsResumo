@@ -11,9 +11,10 @@ export const ContextoPapel = createContext<Papel>("equipe");
 export const usePapel = () => useContext(ContextoPapel);
 
 const NOME_PAPEL: Record<Papel, string> = { equipe: "Equipe", dono: "Dono" };
-const PAGINAS = [
+const PAGINAS: [href: string, nome: string, soDono?: boolean][] = [
   ["/", "Kanban"],
   ["/cards", "Cards"],
+  ["/tabela", "Tabela", true],
   ["/importar", "Importar"],
 ];
 
@@ -53,7 +54,7 @@ export default function Moldura({ children }: { children: React.ReactNode }) {
       <header className="topo no-print">
         <h1>Resumo de NCs</h1>
         <nav aria-label="Páginas">
-          {PAGINAS.map(([href, nome]) => (
+          {PAGINAS.filter(([, , soDono]) => !soDono || papel === "dono").map(([href, nome]) => (
             <Link key={href} href={href} aria-current={atual === href ? "page" : undefined}>
               {nome}
             </Link>

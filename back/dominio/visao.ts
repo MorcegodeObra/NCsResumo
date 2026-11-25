@@ -8,28 +8,32 @@ export interface Extras {
   marcacoes?: Record<string, string>; // id da NC → autor
   resolucao?: string;
   prazo?: string | null; // prazo editado pela equipe
+  conclusao?: { em: string; ncs: string[] } | null; // dada pelo dono, com as NCs que ela cobre
   resumo?: { linhas: LinhaCard[]; assinatura: string } | null; // linhas como a IA escreveu, sem locais
 }
 
 export function montarVisao(
   pacote: PacoteImportado & { saiuEm: string | null },
   ncs: NCImportada[],
-  { marcacoes = {}, resolucao = "", prazo = null, resumo = null }: Extras,
+  { marcacoes = {}, resolucao = "", prazo = null, conclusao = null, resumo = null }: Extras,
 ): PacoteVisao {
   const comSituacao = ncs.map((nc) => ({ ...nc, situacao: situacaoNC(nc, nc.id in marcacoes) }));
   const visiveis = ncsVisiveis(comSituacao) as (NCImportada & { situacao: "aberta" | "corrigida" })[];
   // Só vale enquanto cobre exatamente as NCs visíveis de agora.
   const linhasIA = resumo?.assinatura === assinatura(visiveis) ? resumo.linhas : null;
+  // Vale só para as NCs que o dono viu: uma NC nova traz o pacote de volta.
+  const coluna = colunaDoPacote(pacote.saiuEm, visiveis, !!conclusao && visiveis.every((n) => conclusao.ncs.includes(n.id)));
   return {
     codigo: pacote.codigo,
     tarefa: pacote.tarefa,
     bloco: pacote.bloco,
     pavimento: pacote.pavimento,
     equipes: pacote.equipes,
-    coluna: colunaDoPacote(pacote.saiuEm, visiveis),
+    coluna,
     origem: visiveis.some((n) => n.origem === "fiscalizacao") || (!visiveis.length && ncs.some((n) => n.origem === "fiscalizacao")) ? "fiscalizacao" : "fvs",
     prazo: prazo ?? menorPrazo(visiveis.map((n) => n.prazo)),
     saiuEm: pacote.saiuEm,
+    concluidoEm: coluna === "concluido" ? (conclusao?.em ?? null) : null,
     linhas: linhasIA
       ? linhasIA.map((l) => ({ texto: linhaComLocais(l.texto, visiveis.filter((n) => l.ncs.includes(n.id))), ncs: l.ncs }))
       : linhasLocais(visiveis),

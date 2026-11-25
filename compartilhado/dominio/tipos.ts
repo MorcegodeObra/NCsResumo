@@ -61,6 +61,7 @@ export interface PacoteVisao {
   origem: Origem;
   prazo: string | null;
   saiuEm: string | null;
+  concluidoEm: string | null; // conclusão dada pelo dono
   linhas: LinhaCard[];
   resumoIA: boolean;
   ncs: NCVisao[];

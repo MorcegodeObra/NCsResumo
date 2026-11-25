@@ -103,6 +103,7 @@ export async function importar(banco: Banco, autor: string, carga: CargaImportac
       }
     }
     await gravarEventos(tx, evs);
+    await derrubarConclusoes(tx, [...pacotesAntes.keys()], AUTOR_IMPORTACAO);
 
     const contagens: Contagens = {
       pacotes: ps.length, novos: novos.length, saidos: saidos.length, voltaram: voltaram.length,
@@ -116,13 +117,14 @@ export async function importar(banco: Banco, autor: string, carga: CargaImportac
 type LinhaPacote = {
   codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
   resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
-  resolucao: string;
+  resolucao: string; concluido_em: string | null; concluido_ncs: string[];
   ajustes: Partial<Record<CampoPacote, string>>;
 };
 
 async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Promise<PacoteVisao[]> {
   const pacotes = await banco.consulta<LinhaPacote>(
-    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao, ajustes FROM pacotes ${filtro}`,
+    `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao,
+       ${ISO_UTC("concluido_em")} AS concluido_em, concluido_ncs, ajustes FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
@@ -147,6 +149,7 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
           marcacoes,
           resolucao: p.resolucao,
           prazo,
+          conclusao: p.concluido_em ? { em: p.concluido_em, ncs: p.concluido_ncs } : null,
           resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
@@ -163,11 +166,48 @@ export async function buscarPacote(banco: Consultor, codigo: string): Promise<Pa
   return p;
 }
 
+async function apagarConclusao(tx: Consultor, codigo: string, autor: string) {
+  const apagadas = await tx.consulta(
+    "UPDATE pacotes SET concluido_em = NULL, concluido_ncs = '[]'::jsonb WHERE codigo = $1 AND concluido_em IS NOT NULL RETURNING codigo",
+    [codigo],
+  );
+  if (apagadas.length) await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_reaberto", detalhe: {}, autor }]);
+}
+
+/** Apaga a conclusão do dono que deixou de valer; senão ela voltaria sozinha quando as NCs fossem corrigidas de novo. */
+async function derrubarConclusoes(tx: Consultor, codigos: string[], autor: string) {
+  for (const p of await visoes(tx, "WHERE concluido_em IS NOT NULL AND codigo = ANY($1::text[])", [codigos]))
+    if (p.coluna !== "concluido") await apagarConclusao(tx, p.codigo, autor);
+}
+
+/** Conclusão dada pelo dono; só de um pacote em Corrigido. */
+export async function concluir(banco: Banco, codigo: string): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const p = await buscarPacote(tx, codigo);
+    if (p.coluna !== "corrigido") throw new ErroHttp(409, "Só um pacote em Corrigido pode ser concluído. Atualize a página.");
+    await tx.consulta("UPDATE pacotes SET concluido_em = now(), concluido_ncs = $2::text::jsonb WHERE codigo = $1", [
+      codigo,
+      JSON.stringify(p.ncs.map((n) => n.id)),
+    ]);
+    await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_concluido", detalhe: {}, autor: AUTOR_DONO }]);
+    return buscarPacote(tx, codigo);
+  });
+}
+
+/** Desfaz a conclusão do dono; sem ela, não muda nada. */
+export const reabrir = (banco: Banco, codigo: string): Promise<PacoteVisao> =>
+  banco.transacao(async (tx) => {
+    await apagarConclusao(tx, codigo, AUTOR_DONO);
+    return buscarPacote(tx, codigo);
+  });
+
 /** Mudança da equipe nas marcações: só gera evento para as linhas que de fato mudaram. */
 async function mudarMarcacoes(banco: Banco, codigo: string, autor: string, tipo: string, sql: string, params: unknown[]) {
   return banco.transacao(async (tx) => {
     const mudaram = await tx.consulta<{ id_nc: string }>(sql, params);
     await gravarEventos(tx, mudaram.map((m) => ({ codigo, idNc: m.id_nc, tipo, detalhe: {}, autor })));
+    await derrubarConclusoes(tx, [codigo], autor);
     return buscarPacote(tx, codigo);
   });
 }

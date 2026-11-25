@@ -16,7 +16,8 @@ export function ncsVisiveis<T extends { origem: Origem; situacao: SituacaoNC }>(
   return ativas.some((n) => n.origem === "fiscalizacao") ? ativas.filter((n) => n.origem === "fiscalizacao") : ativas;
 }
 
-export function colunaDoPacote(saiuEm: string | null, visiveis: { situacao: SituacaoNC }[]): Coluna {
+export function colunaDoPacote(saiuEm: string | null, visiveis: { situacao: SituacaoNC }[], concluidaPeloDono = false): Coluna {
   if (saiuEm || visiveis.length === 0) return "concluido";
-  return visiveis.some((n) => n.situacao === "aberta") ? "aberto" : "corrigido";
+  if (visiveis.some((n) => n.situacao === "aberta")) return "aberto";
+  return concluidaPeloDono ? "concluido" : "corrigido";
 }

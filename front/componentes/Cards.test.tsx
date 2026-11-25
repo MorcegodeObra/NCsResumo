@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { SessaoTeste } from "@/front/testes/sessao";
 import { pacoteVisao } from "@/front/testes/visao";
 import Cards from "./Cards";
@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 const pacotes = [pacoteVisao(), pacoteVisao({ codigo: "100002", bloco: "Bloco 2", pavimento: "TÉRREO", tarefa: "Reboco", origem: "fvs" })];
-const abrir = (papel: "equipe" | "dono" = "equipe", busca = "") => render(<SessaoTeste papel={papel}><Cards busca={busca} /></SessaoTeste>);
+const abrir = (papel: "equipe" | "dono" = "equipe") => render(<SessaoTeste papel={papel}><Cards /></SessaoTeste>);
 const cards = () => screen.queryAllByRole("article").map((a) => a.getAttribute("aria-label"));
 
 describe("<Cards/>", () => {
@@ -30,19 +30,19 @@ describe("<Cards/>", () => {
     expect(screen.getByText(/Nenhum card/)).toBeTruthy();
   });
 
-  it("começa com a busca que veio do link do kanban", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
-    abrir("equipe", "100001");
+  it("não mostra as concluídas", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: [pacoteVisao(), pacoteVisao({ codigo: "100003", coluna: "concluido" })] })));
+    abrir("dono");
     await screen.findByRole("article");
     expect(cards()).toEqual(["Pacote 100001"]);
-    expect(screen.getByRole("button", { name: "Fechar" })).toBeTruthy();
   });
 
   it("exporta só o que está na busca", async () => {
     const escrever = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText: escrever } });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
-    abrir("equipe", "100002");
+    abrir();
+    fireEvent.change(await screen.findByLabelText(/Buscar/), { target: { value: "100002" } });
     fireEvent.click(await screen.findByRole("button", { name: "Copiar texto" }));
     await screen.findByText("Texto copiado.");
     expect(escrever.mock.calls[0][0]).toContain("Bloco 2");
@@ -60,15 +60,5 @@ describe("<Cards/>", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Resumir todos" }));
     expect(await screen.findByText("1 de 1 pacotes resumidos.")).toBeTruthy();
     expect(screen.getByText("IA")).toBeTruthy();
-  });
-
-  it("dono: excluir tira o card", async () => {
-    vi.stubGlobal("confirm", () => true);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(resposta(200, { pacotes: [pacoteVisao()] })).mockResolvedValueOnce(resposta(200, { ok: true })));
-    abrir("dono");
-    fireEvent.click(await screen.findByRole("button", { name: "Abrir" }));
-    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
-    expect(await screen.findByText(/Nenhum card/)).toBeTruthy();
-    expect(within(document.body).queryByRole("article")).toBeNull();
   });
 });

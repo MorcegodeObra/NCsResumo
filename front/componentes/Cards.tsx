@@ -3,27 +3,22 @@ import { useState } from "react";
 import CartaoPacote from "./CartaoPacote";
 import Exportar from "./Exportar";
 import { usePapel } from "./Moldura";
+import { buscar } from "@/front/lib/buscar";
 import { resumirFila } from "@/front/lib/resumirFila";
 import { usePacotes } from "@/front/lib/usePacotes";
-import { semAcento } from "@/compartilhado/dominio/normalizar";
-import type { PacoteVisao } from "@/compartilhado/dominio/tipos";
 
-const normal = (s: string) => semAcento(s).toLowerCase().trim();
-const textoDe = (p: PacoteVisao) =>
-  normal([p.codigo, `${p.bloco} · ${p.pavimento}`, p.tarefa, p.equipes, p.resolucao, ...p.linhas.map((l) => l.texto), ...p.ncs.map((n) => `${n.item} ${n.descricao}`)].join("\n"));
-
-export default function Cards({ busca: inicial = "" }: { busca?: string }) {
+export default function Cards() {
   const papel = usePapel();
-  const { pacotes, erro, trocar, tirar } = usePacotes();
-  const [busca, setBusca] = useState(inicial);
+  const { pacotes, erro, trocar } = usePacotes();
+  const [busca, setBusca] = useState("");
   const [progresso, setProgresso] = useState("");
   const [aviso, setAviso] = useState("");
 
   if (erro) return <p role="alert" className="erro">{erro}</p>;
   if (!pacotes) return <p className="cinza">Carregando os cards…</p>;
 
-  const procurado = normal(busca);
-  const achados = pacotes.filter((p) => textoDe(p).includes(procurado));
+  // As concluídas ficam no kanban e na tabela do dono.
+  const achados = buscar(pacotes.filter((p) => p.coluna !== "concluido"), busca);
 
   async function resumirTodos() {
     setAviso("");
@@ -50,7 +45,7 @@ export default function Cards({ busca: inicial = "" }: { busca?: string }) {
       {achados.length ? (
         <div className="grade">
           {achados.map((p) => (
-            <CartaoPacote key={p.codigo} p={p} papel={papel} abertoInicial={p.codigo === inicial} onMudou={trocar} onExcluido={tirar} />
+            <CartaoPacote key={p.codigo} p={p} />
           ))}
         </div>
       ) : (

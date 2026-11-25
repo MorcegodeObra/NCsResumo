@@ -30,6 +30,8 @@ function descrever({ tipo, idNc, detalhe: d }: EventoVisao): string {
     case "pacote_editado": return edicao(d);
     case "nc_editada": return `NC ${idNc}, ${edicao(d)}`;
     case "resumo_ia_gerado": return "Resumo da IA gerado";
+    case "pacote_concluido": return "Pacote concluído pelo dono";
+    case "pacote_reaberto": return "Conclusão do dono desfeita";
     case "pacote_excluido": return "Pacote excluído";
     default: return tipo;
   }

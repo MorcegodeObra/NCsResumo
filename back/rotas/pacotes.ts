@@ -6,8 +6,10 @@ import { exigirPapel } from "@/back/servidor/sessao";
 
 export async function GET(req: NextRequest) {
   try {
-    exigirPapel(req, "equipe");
-    return NextResponse.json({ pacotes: await listarPacotes(banco()) });
+    const papel = exigirPapel(req, "equipe");
+    const pacotes = await listarPacotes(banco());
+    // A equipe só trabalha com Aberto e Corrigido (specs/004).
+    return NextResponse.json({ pacotes: papel === "dono" ? pacotes : pacotes.filter((p) => p.coluna !== "concluido") });
   } catch (e) {
     return erroResposta(e);
   }

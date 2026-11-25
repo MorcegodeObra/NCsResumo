@@ -73,6 +73,9 @@ export async function historico(codigo: string): Promise<EventoVisao[]> {
 
 // ---- Só o dono ----
 
+export const concluir = (codigo: string) => acaoNoPacote(codigo, "conclusao", json("POST"));
+export const reabrir = (codigo: string) => acaoNoPacote(codigo, "conclusao", json("DELETE"));
+
 export const definirResolucao = (codigo: string, texto: string) => acaoNoPacote(codigo, "resolucao", json("PUT", { texto }));
 
 /** Resumo da IA; com `aviso`, a IA falhou e o card continua com o resumo local. */
