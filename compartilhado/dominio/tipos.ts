@@ -4,6 +4,7 @@ export type Origem = "fvs" | "fiscalizacao";
 export type SituacaoNC = "aberta" | "corrigida" | "concluida";
 export type Coluna = "aberto" | "corrigido" | "concluido";
 export type Papel = "equipe" | "dono";
+export type Categoria = "recorrente" | "projeto";
 
 /** Pacote como sai do navegador na importação (campos já formatados). */
 export interface PacoteImportado {
@@ -65,6 +66,7 @@ export interface PacoteVisao {
   concluidoEm: string | null; // conclusão dada pelo dono
   arquivadoEm: string | null; // arquivo do dono: do card ou de todas as NCs visíveis (specs/005)
   urgente: boolean;
+  categoria: Categoria | null; // Recorrente ou Projeto (specs/006); só fora de Concluído e do arquivo
   recenteEm: string | null; // entrada da NC visível mais nova
   arquivadas: NCVisao[]; // NCs arquivadas uma a uma, ainda não concluídas pela planilha
   linhas: LinhaCard[];

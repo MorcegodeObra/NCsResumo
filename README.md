@@ -3,12 +3,13 @@
 Site para acompanhar as não conformidades (NCs) da obra a partir da planilha diária de inspeções.
 
 A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-resolucao-descricao/`,
-`specs/003-kanban-enxuto-edicao-impressao/`, `specs/004-ficha-conclusao-quadro/` e `specs/005-arquivo-urgencia-visual/`.
+`specs/003-kanban-enxuto-edicao-impressao/`, `specs/004-ficha-conclusao-quadro/`, `specs/005-arquivo-urgencia-visual/` e `specs/006-recorrentes-projetos/`.
 
 ## Páginas
 
 - **Kanban** (`/`): quadro que cabe na tela, com o local e o serviço de cada card; clicar abre a ficha, e arrastar ou o botão move. Cada coluna mostra os 10 cards mais recentes, com os urgentes no topo, e **Ver mais** traz mais 10; a busca procura em todos. No celular, uma coluna por vez, em abas. Só o dono vê Concluído.
-- **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1").
+  As colunas **Recorrentes** e **Projetos** guardam os cards com essa categoria; arrastar para lá dá a categoria, e arrastar de volta para a coluna da situação tira.
+- **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com a possível resolução (até 3 linhas na tela), selo de categoria, busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1").
 - **Ficha** (`/cards/<código>`): tudo de um pacote numa página: NCs, marcação, edição, possível resolução, histórico, impressão, IA, conclusão e exclusão.
 - **Tabela** (`/tabela`, só o dono): abertos, corrigidos e concluídos.
 - **Arquivo** (`/arquivo`, só o dono): cards e NCs que não vão ser resolvidos, com **Desarquivar**.
@@ -44,6 +45,10 @@ Só o dono **arquiva** (na ficha) o que não vai ser resolvido: o card inteiro o
 kanban, de `/cards`, da tabela, da exportação e da impressão, e volta sozinho se a planilha trouxer NC nova. A NC
 arquivada sai do card e fica arquivada até o dono desfazer; card com todas as NCs arquivadas vai para o Arquivo. O
 dono também marca um card como **urgente**: o selo aparece para todos e o card sobe para o topo da coluna.
+
+A equipe e o dono dão ao card a categoria **Recorrente** (problema que se repete) ou **Projeto** (problema dos
+projetistas), na ficha ou arrastando no kanban. A categoria não muda a situação das NCs, fica no histórico com o nome,
+e sai quando o dono conclui o card. A busca acha por "recorrente" e "projeto".
 
 Em cada ficha, a equipe marca as NCs corrigidas (ou usa **Mover para Corrigido**, que marca todas as
 abertas) e vê o **Histórico**, sempre com o nome e o horário. O dono escreve a **possível resolução**,

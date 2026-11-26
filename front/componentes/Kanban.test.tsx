@@ -166,4 +166,40 @@ describe("<Kanban/>", () => {
       expect(screen.getByRole("region", { name: /Corrigido/ }).className).toContain("ativa");
     });
   });
+
+  describe("Recorrentes e Projetos (specs/006)", () => {
+    const arrastar = async (codigo: string, para: RegExp) => {
+      fireEvent.dragStart(await screen.findByRole("article", { name: `Pacote ${codigo}` }), { dataTransfer: { setData() {} } });
+      fireEvent.drop(screen.getByRole("region", { name: para }));
+    };
+
+    it("card com categoria fica na coluna dela, com o selo da situação", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: [pacoteVisao({ categoria: "recorrente" }), pacotes[1]] })));
+      abrir("equipe");
+      const rec = await screen.findByRole("region", { name: "Recorrentes (1)" });
+      expect(within(rec).getByText("Aberto")).toBeTruthy();
+      expect(screen.getByRole("region", { name: "Aberto (0)" })).toBeTruthy();
+      expect(screen.getByRole("region", { name: "Projetos (0)" })).toBeTruthy();
+    });
+
+    it("arrastar para Recorrentes dá a categoria, com o nome; de volta para Aberto, tira", async () => {
+      localStorage.setItem("nc-nome", "Ana");
+      const f = vi
+        .fn()
+        .mockResolvedValueOnce(resposta(200, { pacotes: [pacoteVisao()] }))
+        .mockResolvedValueOnce(resposta(200, { pacote: pacoteVisao({ categoria: "recorrente" }) }))
+        .mockResolvedValueOnce(resposta(200, { pacote: pacoteVisao() }));
+      vi.stubGlobal("fetch", f);
+      abrir("equipe");
+      await arrastar("100001", /^Recorrentes/);
+      expect(await screen.findByRole("region", { name: "Recorrentes (1)" })).toBeTruthy();
+      expect(f.mock.calls[1]).toMatchObject(["/api/pacotes/100001/categoria", { method: "PUT" }]);
+      expect(JSON.parse(f.mock.calls[1][1].body)).toEqual({ autor: "Ana", categoria: "recorrente" });
+      await arrastar("100001", /^Corrigido/); // a situação só muda pela marcação
+      expect(f).toHaveBeenCalledTimes(2);
+      await arrastar("100001", /^Aberto/);
+      expect(await screen.findByRole("region", { name: "Aberto (1)" })).toBeTruthy();
+      expect(JSON.parse(f.mock.calls[2][1].body)).toEqual({ autor: "Ana", categoria: null });
+    });
+  });
 });

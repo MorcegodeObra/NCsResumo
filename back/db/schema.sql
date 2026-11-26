@@ -58,6 +58,9 @@ ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS arquivada_em  timestamptz;
 -- quando a NC entrou; as que já existiam ficam com a data da migração
 ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS criada_em     timestamptz NOT NULL DEFAULT now();
 
+-- (b) categoria dada pela equipe ou pelo dono; a importação não mexe (specs/006)
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS categoria text CHECK (categoria IN ('recorrente', 'projeto'));
+
 -- (c) histórico; sem FK para sobreviver à exclusão do pacote
 CREATE TABLE IF NOT EXISTS eventos (
   id            bigserial PRIMARY KEY,

@@ -296,3 +296,23 @@ describe("<Ficha/> — urgência (specs/005)", () => {
     expect(screen.queryByRole("button", { name: "Marcar urgente" })).toBeNull();
   });
 });
+
+describe("<Ficha/> — categoria (specs/006)", () => {
+  it("a equipe liga Recorrente com o nome e desliga; o selo aparece", async () => {
+    localStorage.setItem("nc-nome", "Ana");
+    const f = simularFetch(200, { pacote: pacoteVisao({ categoria: "recorrente" }) });
+    render(<Ficha p={pacoteVisao()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Recorrente" }));
+    await vi.waitFor(() => expect(f.mock.calls[0]).toMatchObject(["/api/pacotes/100001/categoria", { method: "PUT" }]));
+    expect(corpoDe(f)).toEqual({ autor: "Ana", categoria: "recorrente" });
+    cleanup();
+    render(<Ficha p={pacoteVisao({ categoria: "projeto" })} />);
+    expect(screen.getByText("Projeto", { selector: ".situacao" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Projeto" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("card concluído não recebe categoria", () => {
+    render(<Ficha p={pacoteVisao({ coluna: "concluido" })} papel="dono" />);
+    expect(screen.queryByRole("button", { name: "Recorrente" })).toBeNull();
+  });
+});

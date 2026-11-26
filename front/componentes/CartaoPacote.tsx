@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
 import { dataBR } from "@/compartilhado/dominio/datas";
-import type { Coluna, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { Categoria, Coluna, PacoteVisao } from "@/compartilhado/dominio/tipos";
 
 export const NOME_COLUNA: Record<Coluna, string> = { aberto: "Aberto", corrigido: "Corrigido", concluido: "Concluído" };
+export const NOME_CATEGORIA: Record<Categoria, string> = { recorrente: "Recorrente", projeto: "Projeto" };
 
 /** Card de /cards: tamanho fixo na tela e na íntegra na impressão. As ações ficam na ficha. */
 export default function CartaoPacote({ p }: { p: PacoteVisao }) {
@@ -21,19 +22,21 @@ export default function CartaoPacote({ p }: { p: PacoteVisao }) {
           {p.tarefa} <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>
           {p.resumoIA && <span className="situacao no-print" title="Resumo gerado pela IA">IA</span>}
           {p.urgente && <span className="situacao urgente">Urgente</span>}
+          {p.categoria && <span className={`situacao ${p.categoria}`}>{NOME_CATEGORIA[p.categoria]}</span>}
         </p>
         <ul className="resumo">
           {p.linhas.map((l, i) => (
             <li key={i}>{l.texto}</li>
           ))}
         </ul>
-        {p.resolucao && (
-          <div className="resolucao">
-            <strong>Possível resolução</strong>
-            <p>{p.resolucao}</p>
-          </div>
-        )}
       </div>
+      {/* Fora do corpo, que é cortado na tela: assim a resolução sempre aparece (até 3 linhas; inteira na impressão). */}
+      {p.resolucao && (
+        <div className="resolucao">
+          <strong>Possível resolução</strong>
+          <p>{p.resolucao}</p>
+        </div>
+      )}
       <footer className="rodape">
         <div>
           <small>PRAZO</small>

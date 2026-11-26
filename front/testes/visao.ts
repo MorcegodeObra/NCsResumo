@@ -15,6 +15,7 @@ export const pacoteVisao = (x: Partial<PacoteVisao> = {}): PacoteVisao => ({
   arquivadoEm: null,
   urgente: false,
   recenteEm: null,
+  categoria: null,
   arquivadas: [],
   resumoIA: false,
   linhas: [

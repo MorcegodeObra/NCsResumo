@@ -1,4 +1,4 @@
-import type { AjusteNC, AjustesPacote, CampoPacote, CargaImportacao, NCImportada, PacoteImportado } from "@/compartilhado/dominio/tipos";
+import type { AjusteNC, AjustesPacote, CampoPacote, Categoria, CargaImportacao, NCImportada, PacoteImportado } from "@/compartilhado/dominio/tipos";
 import { ErroHttp } from "./http";
 
 /** Texto de entrada não confiável: espaços normalizados e tamanho limitado. */
@@ -142,4 +142,10 @@ export async function idNcDaRota({ params }: { params: Promise<{ id: string }> }
   const { id } = await params;
   if (!/^[\w.-]{1,40}$/.test(id)) throw new ErroHttp(404, "NC não encontrada neste pacote.");
   return id;
+}
+
+/** pacotes.categoria (specs/006): Recorrente, Projeto ou nenhuma (null). */
+export function categoria(v: unknown): Categoria | null {
+  if (v === null || v === "recorrente" || v === "projeto") return v;
+  throw new ErroHttp(400, "Categoria inválida.");
 }

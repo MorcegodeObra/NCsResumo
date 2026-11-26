@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { ArrowRight, Flame, MapPin, Undo2, Wrench } from "lucide-react";
+import { NOME_COLUNA } from "./CartaoPacote";
 import { definirUrgencia } from "@/front/lib/api";
 import { movimento } from "@/front/lib/mover";
 import { useAcao } from "@/front/lib/useAcao";
@@ -23,13 +24,14 @@ export default function CartaoKanban({ p, papel, onMudou, onArrastar }: Props) {
       className={`enxuto ${p.origem} ${p.coluna}${p.urgente ? " urgente" : ""}`}
       aria-label={`Pacote ${p.codigo}`}
       aria-busy={ocupado}
-      draggable={!!mov}
+      draggable={!!mov || p.coluna !== "concluido"} // fora de Concluído, sempre dá para levar a uma categoria
       onDragStart={(e) => {
         e.dataTransfer.setData("text/plain", p.codigo); // o Firefox só arrasta com dados
         onArrastar(p);
       }}
       onDragEnd={() => onArrastar(null)}
     >
+      {p.categoria && <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>}
       {p.urgente && (
         <span className="selo-urgente">
           <Flame aria-hidden size={13} /> Urgente

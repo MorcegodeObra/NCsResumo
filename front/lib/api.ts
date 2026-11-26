@@ -1,5 +1,5 @@
 // Cliente fetch tipado usado pelos componentes (contracts/api.md).
-import type { AjustesPacote, CargaImportacao, Contagens, EventoVisao, PacoteVisao, Papel } from "@/compartilhado/dominio/tipos";
+import type { AjustesPacote, CargaImportacao, Contagens, EventoVisao, PacoteVisao, Papel, Categoria } from "@/compartilhado/dominio/tipos";
 
 export class ErroApi extends Error {
   constructor(
@@ -65,6 +65,8 @@ const acaoNoPacote = async (codigo: string, caminho: string, init: RequestInit) 
 
 export const marcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("POST", { autor, ncs }));
 export const desmarcar = (codigo: string, autor: string, ncs: string[]) => acaoNoPacote(codigo, "marcacoes", json("DELETE", { autor, ncs }));
+export const definirCategoria = (codigo: string, autor: string, categoria: Categoria | null) =>
+  acaoNoPacote(codigo, "categoria", json("PUT", { autor, categoria }));
 export const ajustar = (codigo: string, autor: string, a: AjustesPacote) => acaoNoPacote(codigo, "ajustes", json("PUT", { autor, ...a }));
 
 export async function historico(codigo: string): Promise<EventoVisao[]> {

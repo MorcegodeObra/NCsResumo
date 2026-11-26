@@ -3,7 +3,7 @@ import "server-only";
 // marcacoes, resolucao nem ajustes (Princípio V).
 import { situacaoNC } from "@/back/dominio/situacao";
 import { montarVisao } from "@/back/dominio/visao";
-import type { AjustesPacote, CampoPacote, CargaImportacao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { AjustesPacote, CampoPacote, Categoria, CargaImportacao, Contagens, EventoVisao, LinhaCard, NCImportada, PacoteVisao } from "@/compartilhado/dominio/tipos";
 import type { Banco, Consultor } from "./banco";
 import { ErroHttp } from "./http";
 
@@ -118,7 +118,7 @@ type LinhaPacote = {
   codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
   resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
   resolucao: string; concluido_em: string | null; concluido_ncs: string[];
-  arquivado_em: string | null; arquivado_ncs: string[]; urgente: boolean;
+  arquivado_em: string | null; arquivado_ncs: string[]; urgente: boolean; categoria: Categoria | null;
   ajustes: Partial<Record<CampoPacote, string>>;
 };
 
@@ -126,7 +126,7 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
   const pacotes = await banco.consulta<LinhaPacote>(
     `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao,
        ${ISO_UTC("concluido_em")} AS concluido_em, concluido_ncs, ${ISO_UTC("arquivado_em")} AS arquivado_em, arquivado_ncs, urgente,
-       ajustes FROM pacotes ${filtro}`,
+       categoria, ajustes FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
@@ -159,6 +159,7 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
           arquivadas,
           criadas,
           urgente: p.urgente,
+          categoria: p.categoria,
           resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
@@ -205,7 +206,7 @@ export async function concluir(banco: Banco, codigo: string): Promise<PacoteVisa
     await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
     const p = await buscarPacote(tx, codigo);
     if (p.coluna !== "corrigido") throw new ErroHttp(409, "Só um pacote em Corrigido pode ser concluído. Atualize a página.");
-    await tx.consulta("UPDATE pacotes SET concluido_em = now(), concluido_ncs = $2::text::jsonb, urgente = false WHERE codigo = $1", [
+    await tx.consulta("UPDATE pacotes SET concluido_em = now(), concluido_ncs = $2::text::jsonb, urgente = false, categoria = NULL WHERE codigo = $1", [
       codigo,
       JSON.stringify(p.ncs.map((n) => n.id)),
     ]);
@@ -231,6 +232,21 @@ export async function definirUrgencia(banco: Banco, codigo: string, urgente: boo
     if (l.urgente !== urgente) {
       await tx.consulta("UPDATE pacotes SET urgente = $2 WHERE codigo = $1", [codigo, urgente]);
       await gravarEventos(tx, [{ codigo, idNc: null, tipo: urgente ? "pacote_urgente" : "pacote_nao_urgente", detalhe: {}, autor: AUTOR_DONO }]);
+    }
+    return buscarPacote(tx, codigo);
+  });
+}
+
+/** Categoria dada pela equipe ou pelo dono (specs/006); o mesmo valor não gera evento. */
+export async function definirCategoria(banco: Banco, codigo: string, autor: string, depois: Categoria | null): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    const [l] = await tx.consulta<{ categoria: Categoria | null }>("SELECT categoria FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const p = await buscarPacote(tx, codigo);
+    if (depois && (p.arquivadoEm || p.coluna === "concluido"))
+      throw new ErroHttp(409, "Card arquivado ou concluído não recebe categoria. Atualize a página.");
+    if (l.categoria !== depois) {
+      await tx.consulta("UPDATE pacotes SET categoria = $2 WHERE codigo = $1", [codigo, depois]);
+      await gravarEventos(tx, [{ codigo, idNc: null, tipo: "categoria_mudou", detalhe: { antes: l.categoria, depois }, autor }]);
     }
     return buscarPacote(tx, codigo);
   });

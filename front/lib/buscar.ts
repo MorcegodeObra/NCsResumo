@@ -13,7 +13,7 @@ const normal = (s: string) =>
     .trim();
 
 const textoDe = (p: PacoteVisao) =>
-  [p.codigo, p.bloco, p.pavimento, p.tarefa, p.equipes, p.resolucao, ...p.linhas.map((l) => l.texto), ...p.ncs.flatMap((n) => [n.item, n.tipo, n.descricao, n.sublocal])]
+  [p.codigo, p.bloco, p.pavimento, p.tarefa, p.equipes, p.resolucao, p.categoria ?? "", ...p.linhas.map((l) => l.texto), ...p.ncs.flatMap((n) => [n.item, n.tipo, n.descricao, n.sublocal])]
     .map((s) => ` ${normal(s)} `)
     .join("\n");
 

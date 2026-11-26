@@ -19,3 +19,12 @@ it("sem empresa e sem prazo mostra o espaço para preencher", () => {
   render(<CartaoPacote p={pacoteVisao({ origem: "fvs", equipes: "", prazo: null })} />);
   for (const t of ["ORIGEM: QUALIDADE", "EMPRESA: ________", "__/__"]) expect(screen.getByText(t)).toBeTruthy();
 });
+
+it("categoria e urgência em selo; a resolução fica fora do corpo, para aparecer na tela", () => {
+  const { container } = render(<CartaoPacote p={pacoteVisao({ categoria: "projeto", urgente: true, resolucao: "trocar o projeto" })} />);
+  expect(screen.getByText("Projeto")).toBeTruthy();
+  expect(screen.getByText("Urgente")).toBeTruthy();
+  const res = container.querySelector(".resolucao")!;
+  expect(res.textContent).toContain("trocar o projeto");
+  expect(res.closest(".corpo")).toBeNull();
+});

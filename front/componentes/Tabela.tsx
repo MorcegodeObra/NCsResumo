@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { NOME_COLUNA } from "./CartaoPacote";
+import { NOME_CATEGORIA, NOME_COLUNA } from "./CartaoPacote";
 import { usePapel } from "./Moldura";
 import { usePacotes } from "@/front/lib/usePacotes";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
@@ -34,7 +34,10 @@ export default function Tabela() {
               const abertas = idsAbertas(p).length;
               return (
                 <tr key={p.codigo}>
-                  <td><span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span></td>
+                  <td>
+                    <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>
+                    {p.categoria && <> <span className={`situacao ${p.categoria}`}>{NOME_CATEGORIA[p.categoria]}</span></>}
+                  </td>
                   <td><Link href={`/cards/${p.codigo}`}>{p.codigo}</Link></td>
                   <td>{p.bloco} · {p.pavimento}</td>
                   <td>{p.tarefa}</td>

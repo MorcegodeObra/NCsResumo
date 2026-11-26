@@ -1,16 +1,16 @@
 "use client";
 import { useId, useState } from "react";
-import { Archive, ArchiveRestore, ArrowRight, Flame, Pencil, Printer, Sparkles, Trash2 } from "lucide-react";
-import { NOME_COLUNA } from "./CartaoPacote";
+import { Archive, ArchiveRestore, ArrowRight, DraftingCompass, Flame, Repeat, Pencil, Printer, Sparkles, Trash2 } from "lucide-react";
+import { NOME_CATEGORIA, NOME_COLUNA } from "./CartaoPacote";
 import Editar from "./Editar";
 import Historico from "./Historico";
-import { ajustar, arquivar, arquivarNc, definirResolucao, definirUrgencia, desarquivar, desarquivarNc, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
+import { ajustar, arquivar, arquivarNc, definirCategoria, definirResolucao, definirUrgencia, desarquivar, desarquivarNc, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
 import { movimento } from "@/front/lib/mover";
 import { exigirNome } from "@/front/lib/nome";
 import { useAcao } from "@/front/lib/useAcao";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
 import { dataBR } from "@/compartilhado/dominio/datas";
-import { idsAbertas, type AjustesPacote, type NCVisao, type PacoteVisao, type Papel } from "@/compartilhado/dominio/tipos";
+import { idsAbertas, type AjustesPacote, type Categoria, type NCVisao, type PacoteVisao, type Papel } from "@/compartilhado/dominio/tipos";
 
 interface Props {
   p: PacoteVisao;
@@ -93,6 +93,7 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
         <p className="servico">
           {p.tarefa} <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>
           {p.resumoIA && <span className="situacao no-print" title="Resumo gerado pela IA">IA</span>}
+          {p.categoria && <span className={`situacao ${p.categoria}`}>{NOME_CATEGORIA[p.categoria]}</span>}
           {p.urgente && (
             <span className="situacao urgente">
               <Flame aria-hidden size={12} /> Urgente
@@ -106,6 +107,13 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
             <ArrowRight aria-hidden size={16} /> {mov.nome}
           </button>
         )}
+        {(p.categoria || (p.coluna !== "concluido" && !p.arquivadoEm)) &&
+          (["recorrente", "projeto"] as Categoria[]).map((c) => (
+            <button key={c} type="button" className="botao" aria-pressed={p.categoria === c}
+              onClick={() => trocarPor(() => definirCategoria(p.codigo, exigirNome(), p.categoria === c ? null : c))}>
+              {c === "recorrente" ? <Repeat aria-hidden size={16} /> : <DraftingCompass aria-hidden size={16} />} {NOME_CATEGORIA[c]}
+            </button>
+          ))}
         <button type="button" className="botao" aria-expanded={editando} onClick={() => setEditando(!editando)}>
           <Pencil aria-hidden size={16} /> Editar
         </button>

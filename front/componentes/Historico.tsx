@@ -38,6 +38,7 @@ function descrever({ tipo, idNc, detalhe: d }: EventoVisao): string {
     case "nc_desarquivada": return `NC ${idNc} desarquivada`;
     case "pacote_urgente": return "Marcado como urgente";
     case "pacote_nao_urgente": return "Urgência retirada";
+    case "categoria_mudou": return d.depois ? `Categoria: ${d.depois === "projeto" ? "Projeto" : "Recorrente"}` : "Categoria retirada";
     case "pacote_excluido": return "Pacote excluído";
     default: return tipo;
   }

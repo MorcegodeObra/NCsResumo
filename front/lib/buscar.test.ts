@@ -16,4 +16,9 @@ describe("buscar", () => {
     expect(achar("  ")).toHaveLength(2);
     expect(achar("alvenaria xyz")).toEqual([]);
   });
+
+  it("acha pela categoria", () => {
+    const comCategoria = [...ps, pacoteVisao({ codigo: "100009", categoria: "recorrente" })];
+    expect(buscar(comCategoria, "recorrente").map((p) => p.codigo)).toEqual(["100009"]);
+  });
 });

@@ -2,7 +2,7 @@
 import { linhaComLocais, linhasLocais, menorPrazo } from "@/compartilhado/dominio/agrupar";
 import { assinatura } from "./assinatura";
 import { colunaDoPacote, ncsVisiveis, situacaoNC } from "./situacao";
-import type { LinhaCard, NCImportada, PacoteImportado, PacoteVisao } from "@/compartilhado/dominio/tipos";
+import type { Categoria, LinhaCard, NCImportada, PacoteImportado, PacoteVisao } from "@/compartilhado/dominio/tipos";
 
 export interface Extras {
   marcacoes?: Record<string, string>; // id da NC → autor
@@ -13,6 +13,7 @@ export interface Extras {
   arquivo?: { em: string; ncs: string[] } | null; // arquivo do card pelo dono, com as NCs que ele cobre
   arquivadas?: Record<string, string>; // id da NC → quando o dono a arquivou
   urgente?: boolean;
+  categoria?: Categoria | null;
   criadas?: Record<string, string>; // id da NC → quando entrou no banco
 }
 
@@ -21,7 +22,7 @@ const maior = (datas: (string | undefined)[]) => datas.filter((d): d is string =
 export function montarVisao(
   pacote: PacoteImportado & { saiuEm: string | null },
   ncs: NCImportada[],
-  { marcacoes = {}, resolucao = "", prazo = null, conclusao = null, resumo = null, arquivo = null, arquivadas = {}, urgente = false, criadas = {} }: Extras,
+  { marcacoes = {}, resolucao = "", prazo = null, conclusao = null, resumo = null, arquivo = null, arquivadas = {}, urgente = false, categoria = null, criadas = {} }: Extras,
 ): PacoteVisao {
   const comSituacao = ncs.map((nc) => ({ ...nc, situacao: situacaoNC(nc, nc.id in marcacoes) }));
   const visiveis = ncsVisiveis(comSituacao.filter((n) => !(n.id in arquivadas))) as (NCImportada & { situacao: "aberta" | "corrigida" })[];
@@ -60,6 +61,7 @@ export function montarVisao(
     concluidoEm: coluna === "concluido" ? (conclusao?.em ?? null) : null,
     arquivadoEm,
     urgente: urgente && coluna !== "concluido" && !arquivadoEm,
+    categoria: coluna !== "concluido" && !arquivadoEm ? categoria : null,
     recenteEm: maior(visiveis.map((n) => criadas[n.id])),
     arquivadas: soltas.map(paraVisao),
     linhas: linhasIA
