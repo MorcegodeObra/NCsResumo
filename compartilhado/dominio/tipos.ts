@@ -49,6 +49,7 @@ export interface NCVisao {
   prazo: string | null;
   situacao: "aberta" | "corrigida";
   marcadaPor: string | null;
+  arquivadaEm: string | null; // só nas NCs de PacoteVisao.arquivadas (specs/005)
 }
 
 export interface PacoteVisao {
@@ -62,6 +63,10 @@ export interface PacoteVisao {
   prazo: string | null;
   saiuEm: string | null;
   concluidoEm: string | null; // conclusão dada pelo dono
+  arquivadoEm: string | null; // arquivo do dono: do card ou de todas as NCs visíveis (specs/005)
+  urgente: boolean;
+  recenteEm: string | null; // entrada da NC visível mais nova
+  arquivadas: NCVisao[]; // NCs arquivadas uma a uma, ainda não concluídas pela planilha
   linhas: LinhaCard[];
   resumoIA: boolean;
   ncs: NCVisao[];

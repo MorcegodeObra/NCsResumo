@@ -20,6 +20,7 @@ export default function CartaoPacote({ p }: { p: PacoteVisao }) {
         <p className="servico">
           {p.tarefa} <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>
           {p.resumoIA && <span className="situacao no-print" title="Resumo gerado pela IA">IA</span>}
+          {p.urgente && <span className="situacao urgente">Urgente</span>}
         </p>
         <ul className="resumo">
           {p.linhas.map((l, i) => (

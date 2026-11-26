@@ -3,17 +3,19 @@
 Site para acompanhar as não conformidades (NCs) da obra a partir da planilha diária de inspeções.
 
 A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-resolucao-descricao/`,
-`specs/003-kanban-enxuto-edicao-impressao/` e `specs/004-ficha-conclusao-quadro/`.
+`specs/003-kanban-enxuto-edicao-impressao/`, `specs/004-ficha-conclusao-quadro/` e `specs/005-arquivo-urgencia-visual/`.
 
 ## Páginas
 
-- **Kanban** (`/`): quadro com o local e o serviço de cada card; clicar abre a ficha, e arrastar ou o botão move. Só o dono vê Concluído.
+- **Kanban** (`/`): quadro que cabe na tela, com o local e o serviço de cada card; clicar abre a ficha, e arrastar ou o botão move. Cada coluna mostra os 10 cards mais recentes, com os urgentes no topo, e **Ver mais** traz mais 10; a busca procura em todos. No celular, uma coluna por vez, em abas. Só o dono vê Concluído.
 - **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1").
 - **Ficha** (`/cards/<código>`): tudo de um pacote numa página: NCs, marcação, edição, possível resolução, histórico, impressão, IA, conclusão e exclusão.
 - **Tabela** (`/tabela`, só o dono): abertos, corrigidos e concluídos.
+- **Arquivo** (`/arquivo`, só o dono): cards e NCs que não vão ser resolvidos, com **Desarquivar**.
 - **Importar** (`/importar`): passo a passo e resultado da importação.
 
-Toda página mostra o nome, o papel e o botão **Sair**, que apaga a sessão e o nome guardado no aparelho.
+O menu fica na lateral no computador (o botão do topo recolhe e a escolha fica salva) e numa barra embaixo no celular.
+Ele mostra o nome, o papel e o botão **Sair**, que apaga a sessão e o nome guardado no aparelho.
 
 ## Importar a planilha
 
@@ -37,6 +39,11 @@ saiu (a planilha só traz pacotes reprovados). Importar a mesma planilha de novo
 
 O dono também pode **Mover para Concluído** um pacote em Corrigido, e desfazer. A conclusão cai sozinha
 quando aparece NC nova ou alguma NC volta a ficar aberta. A equipe não recebe os pacotes concluídos.
+
+Só o dono **arquiva** (na ficha) o que não vai ser resolvido: o card inteiro ou NC por NC. O card arquivado sai do
+kanban, de `/cards`, da tabela, da exportação e da impressão, e volta sozinho se a planilha trouxer NC nova. A NC
+arquivada sai do card e fica arquivada até o dono desfazer; card com todas as NCs arquivadas vai para o Arquivo. O
+dono também marca um card como **urgente**: o selo aparece para todos e o card sobe para o topo da coluna.
 
 Em cada ficha, a equipe marca as NCs corrigidas (ou usa **Mover para Corrigido**, que marca todas as
 abertas) e vê o **Histórico**, sempre com o nome e o horário. O dono escreve a **possível resolução**,

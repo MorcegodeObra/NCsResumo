@@ -69,4 +69,51 @@ describe("montarVisao", () => {
     expect(visao("100001", { resumo: { linhas, assinatura: assinatura(local.ncs.slice(1)) } })).toEqual(local);
     expect(visao("100001", { resumo: null })).toEqual(local);
   });
+
+  describe("arquivo e urgência (specs/005)", () => {
+    const EM = "2026-11-26T10:00:00Z";
+    const todas = ["9101", "9102", "9103", "9104"];
+
+    it("NC arquivada sai das visíveis e vai para arquivadas; o card continua no kanban", () => {
+      const v = visao("100002", { arquivadas: { "9101": EM } });
+      expect(v.ncs.map((n) => n.id).sort()).toEqual(["9102", "9103", "9104"]);
+      expect(v.ncs.every((n) => n.arquivadaEm === null)).toBe(true);
+      expect(v.arquivadas).toMatchObject([{ id: "9101", arquivadaEm: EM }]);
+      expect(v.arquivadoEm).toBeNull();
+    });
+
+    it("NC arquivada não conta para a coluna", () => {
+      const v = visao("100002", { marcacoes: { "9102": "A", "9103": "A" }, arquivadas: { "9104": EM } });
+      expect(v.coluna).toBe("corrigido");
+    });
+
+    it("todas as NCs visíveis arquivadas: card arquivado com a data da última", () => {
+      const arquivadas = { "9101": "2026-11-20T10:00:00Z", "9102": EM, "9103": EM, "9104": "2026-11-21T10:00:00Z" };
+      expect(visao("100002", { arquivadas }).arquivadoEm).toBe(EM);
+    });
+
+    it("arquivo do card vale enquanto cobre as NCs visíveis; NC nova o derruba", () => {
+      expect(visao("100002", { arquivo: { em: EM, ncs: todas } }).arquivadoEm).toBe(EM);
+      expect(visao("100002", { arquivo: { em: EM, ncs: todas.slice(1) } }).arquivadoEm).toBeNull();
+    });
+
+    it("pacote que saiu da planilha não fica arquivado", () => {
+      const p = { ...carga.pacotes.find((x) => x.codigo === "100002")!, saiuEm: EM };
+      expect(montarVisao(p, carga.ncs.filter((n) => n.codigoPacote === "100002"), { arquivo: { em: EM, ncs: todas } }).arquivadoEm).toBeNull();
+    });
+
+    it("urgente só fora de Concluído e do arquivo", () => {
+      expect(visao("100002", { urgente: true }).urgente).toBe(true);
+      expect(visao("100002").urgente).toBe(false);
+      expect(visao("100002", { urgente: true, arquivo: { em: EM, ncs: todas } }).urgente).toBe(false);
+      const marcacoes = Object.fromEntries(todas.map((id) => [id, "A"]));
+      expect(visao("100002", { urgente: true, marcacoes, conclusao: { em: EM, ncs: todas } }).urgente).toBe(false);
+    });
+
+    it("recenteEm: a maior data de entrada entre as NCs visíveis", () => {
+      const criadas = { "9101": "2026-11-01T10:00:00Z", "9102": "2026-11-05T10:00:00Z", "9001": "2026-12-01T10:00:00Z" };
+      expect(visao("100002", { criadas }).recenteEm).toBe("2026-11-05T10:00:00Z");
+      expect(visao("100002").recenteEm).toBeNull();
+    });
+  });
 });

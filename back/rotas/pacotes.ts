@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   try {
     const papel = exigirPapel(req, "equipe");
     const pacotes = await listarPacotes(banco());
-    // A equipe só trabalha com Aberto e Corrigido (specs/004).
-    return NextResponse.json({ pacotes: papel === "dono" ? pacotes : pacotes.filter((p) => p.coluna !== "concluido") });
+    // A equipe só trabalha com Aberto e Corrigido (specs/004) e não vê o arquivo (specs/005).
+    return NextResponse.json({ pacotes: papel === "dono" ? pacotes : pacotes.filter((p) => p.coluna !== "concluido" && !p.arquivadoEm) });
   } catch (e) {
     return erroResposta(e);
   }

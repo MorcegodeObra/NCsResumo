@@ -27,7 +27,7 @@ describe("<Moldura/>", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { papel: "dono" })));
     abrir();
     expect(await screen.findByText("conteúdo do dono")).toBeTruthy();
-    expect(screen.getAllByRole("link").map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Kanban", "/"], ["Cards", "/cards"], ["Tabela", "/tabela"], ["Importar", "/importar"]]);
+    expect(screen.getAllByRole("link").map((a) => [a.textContent, a.getAttribute("href")])).toEqual([["Kanban", "/"], ["Cards", "/cards"], ["Tabela", "/tabela"], ["Arquivo", "/arquivo"], ["Importar", "/importar"]]);
     expect(screen.getByText("Ana · Dono")).toBeTruthy();
   });
 
@@ -67,5 +67,20 @@ describe("<Moldura/>", () => {
     await screen.findByText(/conteúdo/);
     await act(() => chamar("/api/pacotes").catch(() => {}));
     expect(await screen.findByLabelText("Senha")).toBeTruthy();
+  });
+
+  it("menu: a equipe não vê Tabela nem Arquivo; recolher fica salvo", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => resposta(200, { papel: "equipe" })));
+    abrir();
+    await screen.findByText("conteúdo do equipe");
+    expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual(["Kanban", "Cards", "Importar"]);
+    const botao = screen.getByRole("button", { name: "Recolher o menu" });
+    expect(botao.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(botao);
+    expect(screen.getByRole("button", { name: "Abrir o menu" }).getAttribute("aria-expanded")).toBe("false");
+    expect(localStorage.getItem("nc-menu-recolhido")).toBe("1");
+    cleanup();
+    abrir();
+    expect(await screen.findByRole("button", { name: "Abrir o menu" })).toBeTruthy();
   });
 });

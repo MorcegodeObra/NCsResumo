@@ -243,3 +243,56 @@ describe("<Ficha/> — edição", () => {
     expect((screen.getByLabelText("Empresa") as HTMLInputElement).value).toBe("BETA");
   });
 });
+
+describe("<Ficha/> — arquivo (specs/005)", () => {
+  const solta = { ...pacoteVisao().ncs[0], id: "9009", descricao: "não vai ser feita", arquivadaEm: "2026-11-26T10:00:00Z" };
+
+  it("a equipe não arquiva", () => {
+    render(<Ficha p={pacoteVisao({ arquivadas: [solta] })} />);
+    expect(screen.queryByRole("button", { name: /rquivar/ })).toBeNull();
+    expect(screen.queryByText(/não vai ser feita/)).toBeNull();
+  });
+
+  it("o dono arquiva o card e cada NC", async () => {
+    const f = simularFetch(200, { pacote: pacoteVisao() });
+    const onMudou = vi.fn();
+    render(<Ficha p={pacoteVisao()} papel="dono" onMudou={onMudou} />);
+    expect(screen.getAllByRole("button", { name: /^Arquivar NC/ })).toHaveLength(3);
+    fireEvent.click(screen.getByRole("button", { name: "Arquivar card" }));
+    await vi.waitFor(() => expect(f.mock.calls[0]).toMatchObject(["/api/pacotes/100001/arquivo", { method: "POST" }]));
+    await vi.waitFor(() => expect(onMudou).toHaveBeenCalled());
+    fireEvent.click(screen.getAllByRole("button", { name: /^Arquivar NC/ })[0]);
+    await vi.waitFor(() => expect(f.mock.calls[1]).toMatchObject(["/api/pacotes/100001/ncs/9001/arquivo", { method: "POST" }]));
+  });
+
+  it("card arquivado: data, Desarquivar card e as NCs arquivadas com Desarquivar", async () => {
+    const f = simularFetch(200, { pacote: pacoteVisao() });
+    render(<Ficha p={pacoteVisao({ arquivadoEm: "2026-11-26T10:00:00Z", arquivadas: [solta] })} papel="dono" />);
+    expect(screen.getByText("Arquivado em")).toBeTruthy();
+    expect(screen.getByText(/não vai ser feita/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Desarquivar NC/ }));
+    await vi.waitFor(() => expect(f.mock.calls[0]).toMatchObject(["/api/pacotes/100001/ncs/9009/arquivo", { method: "DELETE" }]));
+    await vi.waitFor(() => expect(screen.getByRole("article").getAttribute("aria-busy")).toBe("false"));
+    fireEvent.click(screen.getByRole("button", { name: "Desarquivar card" }));
+    await vi.waitFor(() => expect(f.mock.calls[1]).toMatchObject(["/api/pacotes/100001/arquivo", { method: "DELETE" }]));
+  });
+});
+
+describe("<Ficha/> — urgência (specs/005)", () => {
+  it("o selo aparece para todos; só o dono marca e tira", async () => {
+    render(<Ficha p={pacoteVisao({ urgente: true })} />);
+    expect(screen.getByText("Urgente")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /urgên|urgente/ })).toBeNull();
+    cleanup();
+    const f = simularFetch(200, { pacote: pacoteVisao() });
+    render(<Ficha p={pacoteVisao()} papel="dono" />);
+    fireEvent.click(screen.getByRole("button", { name: "Marcar urgente" }));
+    await vi.waitFor(() => expect(f.mock.calls[0]).toMatchObject(["/api/pacotes/100001/urgencia", { method: "PUT" }]));
+    expect(corpoDe(f)).toEqual({ urgente: true });
+  });
+
+  it("card concluído não pode ser marcado", () => {
+    render(<Ficha p={pacoteVisao({ coluna: "concluido" })} papel="dono" />);
+    expect(screen.queryByRole("button", { name: "Marcar urgente" })).toBeNull();
+  });
+});

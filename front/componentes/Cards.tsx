@@ -17,12 +17,12 @@ export default function Cards() {
   if (erro) return <p role="alert" className="erro">{erro}</p>;
   if (!pacotes) return <p className="cinza">Carregando os cards…</p>;
 
-  // As concluídas ficam no kanban e na tabela do dono.
-  const achados = buscar(pacotes.filter((p) => p.coluna !== "concluido"), busca);
+  // As concluídas ficam no kanban e na tabela do dono; as arquivadas, no Arquivo.
+  const achados = buscar(pacotes.filter((p) => p.coluna !== "concluido" && !p.arquivadoEm), busca);
 
   async function resumirTodos() {
     setAviso("");
-    setAviso(await resumirFila(pacotes!, setProgresso, trocar));
+    setAviso(await resumirFila(pacotes!.filter((p) => !p.arquivadoEm), setProgresso, trocar));
     setProgresso("");
   }
 

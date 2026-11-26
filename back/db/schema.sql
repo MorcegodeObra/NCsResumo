@@ -50,6 +50,14 @@ ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS ajustes jsonb NOT NULL DEFAULT '{}'
 ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS concluido_em  timestamptz;
 ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS concluido_ncs jsonb NOT NULL DEFAULT '[]'::jsonb;
 
+-- (b) arquivo e urgência dados pelo dono; a importação só derruba o arquivo do card (specs/005)
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS arquivado_em  timestamptz;
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS arquivado_ncs jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE pacotes ADD COLUMN IF NOT EXISTS urgente       boolean NOT NULL DEFAULT false;
+ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS arquivada_em  timestamptz;
+-- quando a NC entrou; as que já existiam ficam com a data da migração
+ALTER TABLE ncs     ADD COLUMN IF NOT EXISTS criada_em     timestamptz NOT NULL DEFAULT now();
+
 -- (c) histórico; sem FK para sobreviver à exclusão do pacote
 CREATE TABLE IF NOT EXISTS eventos (
   id            bigserial PRIMARY KEY,

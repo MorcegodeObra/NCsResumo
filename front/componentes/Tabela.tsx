@@ -12,7 +12,8 @@ const COLUNAS: Coluna[] = ["aberto", "corrigido", "concluido"];
 /** Todas as fichas por situação, só para o dono. */
 export default function Tabela() {
   const papel = usePapel();
-  const { pacotes, erro } = usePacotes();
+  const { pacotes: todos, erro } = usePacotes();
+  const pacotes = todos && todos.filter((p) => !p.arquivadoEm); // os arquivados ficam no Arquivo
   if (papel !== "dono") return <p>Só o dono vê esta página.</p>;
   if (erro) return <p role="alert" className="erro">{erro}</p>;
   if (!pacotes) return <p className="cinza">Carregando a tabela…</p>;

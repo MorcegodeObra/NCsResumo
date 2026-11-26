@@ -3,7 +3,7 @@ import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
 import { dataBR } from "@/compartilhado/dominio/datas";
 import type { PacoteVisao } from "@/compartilhado/dominio/tipos";
 
-export const exportaveis = (ps: PacoteVisao[]) => ps.filter((p) => p.coluna !== "concluido");
+export const exportaveis = (ps: PacoteVisao[]) => ps.filter((p) => p.coluna !== "concluido" && !p.arquivadoEm);
 
 function pacoteParaTexto(p: PacoteVisao): string {
   return [

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  ajustar, definirResolucao, desmarcar, entrar, enviarImportacao, ErroApi, excluir, historico, listarPacotes, marcar, papel, quandoSessaoExpirar, resumir, sair,
+  ajustar, arquivar, arquivarNc, definirResolucao, definirUrgencia, desarquivar, desarquivarNc, desmarcar, entrar, enviarImportacao, ErroApi, excluir, historico, listarPacotes, marcar, papel, quandoSessaoExpirar, resumir, sair,
 } from "./api";
 
 const resposta = (status: number, corpo: unknown) =>
@@ -120,5 +120,23 @@ describe("ações no pacote", () => {
     await excluir("1");
     expect(f.mock.calls[0][0]).toBe("/api/pacotes/1");
     expect(f.mock.calls[0][1].method).toBe("DELETE");
+  });
+
+  it("arquivo do card e da NC, e urgência: rota, método e corpo", async () => {
+    const ok = () => resposta(200, { pacote: { codigo: "1" } });
+    const f = mockFetch(ok(), ok(), ok(), ok(), ok());
+    await arquivar("1");
+    await desarquivar("1");
+    await arquivarNc("1", "9001");
+    await desarquivarNc("1", "9001");
+    await definirUrgencia("1", true);
+    expect(f.mock.calls.map(([url, init]) => `${init.method} ${url}`)).toEqual([
+      "POST /api/pacotes/1/arquivo",
+      "DELETE /api/pacotes/1/arquivo",
+      "POST /api/pacotes/1/ncs/9001/arquivo",
+      "DELETE /api/pacotes/1/ncs/9001/arquivo",
+      "PUT /api/pacotes/1/urgencia",
+    ]);
+    expect(JSON.parse(f.mock.calls[4][1].body)).toEqual({ urgente: true });
   });
 });

@@ -37,7 +37,7 @@ describe("<Kanban/>", () => {
     const card = await screen.findByRole("article", { name: "Pacote 100001" });
     expect(card.textContent).toBe("Bloco 1 · 3º PAV.AlvenariaMover para Corrigido");
     expect(within(card).getByRole("link").getAttribute("href")).toBe("/cards/100001");
-    expect(within(screen.getByRole("article", { name: "Pacote 100002" })).getByRole("button").textContent).toBe("Mover para Concluído");
+    expect(within(screen.getByRole("article", { name: "Pacote 100002" })).getByRole("button", { name: "Mover para Concluído" })).toBeTruthy();
     expect(within(screen.getByRole("article", { name: "Pacote 100003" })).queryByRole("button")).toBeNull();
   });
 
@@ -101,5 +101,69 @@ describe("<Kanban/>", () => {
     expect(await screen.findByRole("region", { name: "Corrigido (1)" })).toBeTruthy();
     expect(JSON.parse(f.mock.calls[1][1].body)).toEqual({ autor: "Ana", ncs: ["9001", "9005"] });
     expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  describe("kanban fixo, urgência e busca (specs/005)", () => {
+    const muitos = Array.from({ length: 25 }, (_, i) =>
+      pacoteVisao({ codigo: String(200000 + i), bloco: `Bloco ${i + 1}`, recenteEm: `2026-11-${String(i + 1).padStart(2, "0")}T10:00:00Z` }),
+    );
+    const cards = (col: RegExp) => within(screen.getByRole("region", { name: col })).queryAllByRole("article").map((a) => a.getAttribute("aria-label"));
+
+    it("mostra 10 por coluna, os mais recentes primeiro, com o total; Ver mais traz mais 10", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: muitos })));
+      abrir();
+      await screen.findByRole("region", { name: "Aberto (25)" });
+      expect(cards(/Aberto/)).toHaveLength(10);
+      expect(cards(/Aberto/)[0]).toBe("Pacote 200024");
+      fireEvent.click(screen.getByRole("button", { name: /Ver mais \(15\)/ }));
+      expect(cards(/Aberto/)).toHaveLength(20);
+      fireEvent.click(screen.getByRole("button", { name: /Ver mais \(5\)/ }));
+      expect(cards(/Aberto/)).toHaveLength(25);
+      expect(screen.queryByRole("button", { name: /Ver mais/ })).toBeNull();
+    });
+
+    it("urgente vai para o topo e tem selo para a equipe, sem o botão", async () => {
+      const lista = [...muitos.slice(0, 24), pacoteVisao({ codigo: "300000", urgente: true, recenteEm: null })];
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: lista })));
+      abrir("equipe");
+      await screen.findByRole("region", { name: "Aberto (25)" });
+      expect(cards(/Aberto/)[0]).toBe("Pacote 300000");
+      expect(within(screen.getByRole("article", { name: "Pacote 300000" })).getByText("Urgente")).toBeTruthy();
+      expect(screen.queryByRole("button", { name: /urgência|urgente/ })).toBeNull();
+    });
+
+    it("o dono marca a urgência pelo card", async () => {
+      const f = vi
+        .fn()
+        .mockResolvedValueOnce(resposta(200, { pacotes }))
+        .mockResolvedValueOnce(resposta(200, { pacote: pacoteVisao({ urgente: true }) }));
+      vi.stubGlobal("fetch", f);
+      abrir();
+      const card = await screen.findByRole("article", { name: "Pacote 100001" });
+      fireEvent.click(within(card).getByRole("button", { name: "Marcar como urgente" }));
+      expect(await screen.findByText("Urgente")).toBeTruthy();
+      expect(f.mock.calls[1]).toMatchObject(["/api/pacotes/100001/urgencia", { method: "PUT" }]);
+    });
+
+    it("a busca acha um card escondido pelo corte; arquivados não aparecem", async () => {
+      const lista = [...muitos, pacoteVisao({ codigo: "400000", bloco: "Bloco 99", arquivadoEm: "2026-11-26T10:00:00Z" })];
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes: lista })));
+      abrir();
+      await screen.findByRole("region", { name: "Aberto (25)" });
+      fireEvent.change(screen.getByRole("searchbox", { name: "Buscar no kanban" }), { target: { value: "bloco 1" } });
+      expect(cards(/Aberto/)).toEqual(["Pacote 200000"]);
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "bloco 99" } });
+      expect(cards(/Aberto/)).toEqual([]);
+    });
+
+    it("abas escolhem a coluna do celular", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(resposta(200, { pacotes })));
+      abrir();
+      const aba = await screen.findByRole("button", { name: /^Corrigido/ });
+      expect(screen.getByRole("region", { name: /Aberto/ }).className).toContain("ativa");
+      fireEvent.click(aba);
+      expect(aba.getAttribute("aria-pressed")).toBe("true");
+      expect(screen.getByRole("region", { name: /Corrigido/ }).className).toContain("ativa");
+    });
   });
 });

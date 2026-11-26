@@ -136,3 +136,10 @@ export async function codigoDaRota({ params }: { params: Promise<{ codigo: strin
   if (!/^\d{1,20}$/.test(codigo)) throw new ErroHttp(404, "Pacote não encontrado.");
   return codigo;
 }
+
+/** Identificador da NC vindo da URL; fora do formato, a NC não existe. */
+export async function idNcDaRota({ params }: { params: Promise<{ id: string }> }): Promise<string> {
+  const { id } = await params;
+  if (!/^[\w.-]{1,40}$/.test(id)) throw new ErroHttp(404, "NC não encontrada neste pacote.");
+  return id;
+}

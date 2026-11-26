@@ -32,6 +32,12 @@ function descrever({ tipo, idNc, detalhe: d }: EventoVisao): string {
     case "resumo_ia_gerado": return "Resumo da IA gerado";
     case "pacote_concluido": return "Pacote concluído pelo dono";
     case "pacote_reaberto": return "Conclusão do dono desfeita";
+    case "pacote_arquivado": return "Card arquivado pelo dono";
+    case "pacote_desarquivado": return "Card desarquivado";
+    case "nc_arquivada": return `NC ${idNc} arquivada pelo dono`;
+    case "nc_desarquivada": return `NC ${idNc} desarquivada`;
+    case "pacote_urgente": return "Marcado como urgente";
+    case "pacote_nao_urgente": return "Urgência retirada";
     case "pacote_excluido": return "Pacote excluído";
     default: return tipo;
   }

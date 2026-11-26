@@ -1,9 +1,10 @@
 "use client";
 import { useId, useState } from "react";
+import { Archive, ArchiveRestore, ArrowRight, Flame, Pencil, Printer, Sparkles, Trash2 } from "lucide-react";
 import { NOME_COLUNA } from "./CartaoPacote";
 import Editar from "./Editar";
 import Historico from "./Historico";
-import { ajustar, definirResolucao, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
+import { ajustar, arquivar, arquivarNc, definirResolucao, definirUrgencia, desarquivar, desarquivarNc, desmarcar, excluir, marcar, resumir } from "@/front/lib/api";
 import { movimento } from "@/front/lib/mover";
 import { exigirNome } from "@/front/lib/nome";
 import { useAcao } from "@/front/lib/useAcao";
@@ -79,6 +80,7 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
     ["NCs abertas", String(abertas)],
     ["NCs corrigidas", String(p.ncs.length - abertas)],
     ...(p.concluidoEm ? [["Concluído pelo dono em", dataBR(p.concluidoEm)]] : []),
+    ...(p.arquivadoEm ? [["Arquivado em", dataBR(p.arquivadoEm)]] : []),
     ...(p.saiuEm ? [["Saiu da planilha em", dataBR(p.saiuEm)]] : []),
   ];
 
@@ -91,28 +93,43 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
         <p className="servico">
           {p.tarefa} <span className={`situacao ${p.coluna}`}>{NOME_COLUNA[p.coluna]}</span>
           {p.resumoIA && <span className="situacao no-print" title="Resumo gerado pela IA">IA</span>}
+          {p.urgente && (
+            <span className="situacao urgente">
+              <Flame aria-hidden size={12} /> Urgente
+            </span>
+          )}
         </p>
       </header>
       <div className="botoes no-print">
         {mov && (
           <button type="button" className="botao destaque" onClick={() => trocarPor(mov.executar)}>
-            {mov.nome}
+            <ArrowRight aria-hidden size={16} /> {mov.nome}
           </button>
         )}
         <button type="button" className="botao" aria-expanded={editando} onClick={() => setEditando(!editando)}>
-          Editar
+          <Pencil aria-hidden size={16} /> Editar
         </button>
         {dono && p.linhas.length > 0 && (
           <button type="button" className="botao" onClick={gerarResumo}>
-            Resumir com IA
+            <Sparkles aria-hidden size={16} /> Resumir com IA
           </button>
         )}
         <button type="button" className="botao" onClick={() => window.print()}>
-          Imprimir
+          <Printer aria-hidden size={16} /> Imprimir
         </button>
+        {dono && (p.urgente || (p.coluna !== "concluido" && !p.arquivadoEm)) && (
+          <button type="button" className="botao" aria-pressed={p.urgente} onClick={() => trocarPor(() => definirUrgencia(p.codigo, !p.urgente))}>
+            <Flame aria-hidden size={16} /> {p.urgente ? "Tirar urgência" : "Marcar urgente"}
+          </button>
+        )}
+        {dono && (p.arquivadoEm || p.ncs.length > 0) && (
+          <button type="button" className="botao" onClick={() => trocarPor(() => (p.arquivadoEm ? desarquivar : arquivar)(p.codigo))}>
+            {p.arquivadoEm ? <ArchiveRestore aria-hidden size={16} /> : <Archive aria-hidden size={16} />} {p.arquivadoEm ? "Desarquivar card" : "Arquivar card"}
+          </button>
+        )}
         {dono && (
           <button type="button" className="botao perigo" onClick={apagar}>
-            Excluir
+            <Trash2 aria-hidden size={16} /> Excluir
           </button>
         )}
       </div>
@@ -160,12 +177,36 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
                         </small>
                       </span>
                     </label>
+                    {dono && (
+                      <button type="button" className="botao peq no-print" aria-label={`Arquivar NC ${n.sublocal} ${n.descricao || n.item}`.replace(/\s+/g, " ")} onClick={() => trocarPor(() => arquivarNc(p.codigo, n.id))}>
+                        <Archive aria-hidden size={14} /> Arquivar
+                      </button>
+                    )}
                   </li>
                 ))}
             </ul>
           </div>
         ))}
       </section>
+      {dono && p.arquivadas.length > 0 && (
+        <section className="no-print" aria-labelledby={`${id}-arq`}>
+          <h3 id={`${id}-arq`}>NCs arquivadas ({p.arquivadas.length})</h3>
+          <ul className="arquivadas">
+            {p.arquivadas.map((n) => (
+              <li key={n.id}>
+                <span>
+                  {n.sublocal && <strong>{n.sublocal}: </strong>}
+                  {n.descricao || n.item}
+                  <small>arquivada em {dataBR(n.arquivadaEm!)}</small>
+                </span>
+                <button type="button" className="botao peq" aria-label={`Desarquivar NC ${n.sublocal} ${n.descricao || n.item}`.replace(/\s+/g, " ")} onClick={() => trocarPor(() => desarquivarNc(p.codigo, n.id))}>
+                  <ArchiveRestore aria-hidden size={14} /> Desarquivar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {(dono || p.resolucao) && (
         <section aria-labelledby={`${id}-res`}>
           <h3 id={`${id}-res`}>Possível resolução</h3>

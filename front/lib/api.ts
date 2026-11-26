@@ -76,6 +76,12 @@ export async function historico(codigo: string): Promise<EventoVisao[]> {
 export const concluir = (codigo: string) => acaoNoPacote(codigo, "conclusao", json("POST"));
 export const reabrir = (codigo: string) => acaoNoPacote(codigo, "conclusao", json("DELETE"));
 
+export const arquivar = (codigo: string) => acaoNoPacote(codigo, "arquivo", json("POST"));
+export const desarquivar = (codigo: string) => acaoNoPacote(codigo, "arquivo", json("DELETE"));
+export const arquivarNc = (codigo: string, id: string) => acaoNoPacote(codigo, `ncs/${encodeURIComponent(id)}/arquivo`, json("POST"));
+export const desarquivarNc = (codigo: string, id: string) => acaoNoPacote(codigo, `ncs/${encodeURIComponent(id)}/arquivo`, json("DELETE"));
+export const definirUrgencia = (codigo: string, urgente: boolean) => acaoNoPacote(codigo, "urgencia", json("PUT", { urgente }));
+
 export const definirResolucao = (codigo: string, texto: string) => acaoNoPacote(codigo, "resolucao", json("PUT", { texto }));
 
 /** Resumo da IA; com `aviso`, a IA falhou e o card continua com o resumo local. */

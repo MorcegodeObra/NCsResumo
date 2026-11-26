@@ -118,22 +118,27 @@ type LinhaPacote = {
   codigo: string; tarefa: string; bloco: string; pavimento: string; equipes: string; saiu_em: string | null;
   resumo_ia: LinhaCard[] | null; resumo_assinatura: string | null;
   resolucao: string; concluido_em: string | null; concluido_ncs: string[];
+  arquivado_em: string | null; arquivado_ncs: string[]; urgente: boolean;
   ajustes: Partial<Record<CampoPacote, string>>;
 };
 
 async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Promise<PacoteVisao[]> {
   const pacotes = await banco.consulta<LinhaPacote>(
     `SELECT codigo, tarefa, bloco, pavimento, equipes, ${ISO_UTC("saiu_em")} AS saiu_em, resumo_ia, resumo_assinatura, resolucao,
-       ${ISO_UTC("concluido_em")} AS concluido_em, concluido_ncs, ajustes FROM pacotes ${filtro}`,
+       ${ISO_UTC("concluido_em")} AS concluido_em, concluido_ncs, ${ISO_UTC("arquivado_em")} AS arquivado_em, arquivado_ncs, urgente,
+       ajustes FROM pacotes ${filtro}`,
     params,
   );
   const codigos = pacotes.map((p) => p.codigo);
   const ncs = (
-    await banco.consulta<LinhaNC & { ajustes: { descricao?: string; sublocal?: string } }>(
-      `SELECT ${COLUNAS_NC}, ajustes FROM ncs WHERE codigo_pacote = ANY($1::text[]) ORDER BY id`,
+    await banco.consulta<LinhaNC & { ajustes: { descricao?: string; sublocal?: string }; arquivada_em: string | null; criada_em: string }>(
+      `SELECT ${COLUNAS_NC}, ajustes, ${ISO_UTC("arquivada_em")} AS arquivada_em, ${ISO_UTC("criada_em")} AS criada_em
+       FROM ncs WHERE codigo_pacote = ANY($1::text[]) ORDER BY id`,
       [codigos],
     )
-  ).map((l) => ({ ...paraNC(l), ...l.ajustes }));
+  ).map((l) => ({ ...paraNC(l), ...l.ajustes, arquivadaEm: l.arquivada_em, criadaEm: l.criada_em }));
+  const arquivadas = Object.fromEntries(ncs.filter((n) => n.arquivadaEm).map((n) => [n.id, n.arquivadaEm!]));
+  const criadas = Object.fromEntries(ncs.map((n) => [n.id, n.criadaEm]));
   const marcacoes = Object.fromEntries(
     (await banco.consulta<{ id_nc: string; autor: string }>(
       "SELECT m.id_nc, m.autor FROM marcacoes m JOIN ncs n ON n.id = m.id_nc WHERE n.codigo_pacote = ANY($1::text[])",
@@ -150,6 +155,10 @@ async function visoes(banco: Consultor, filtro = "", params: unknown[] = []): Pr
           resolucao: p.resolucao,
           prazo,
           conclusao: p.concluido_em ? { em: p.concluido_em, ncs: p.concluido_ncs } : null,
+          arquivo: p.arquivado_em ? { em: p.arquivado_em, ncs: p.arquivado_ncs } : null,
+          arquivadas,
+          criadas,
+          urgente: p.urgente,
           resumo: p.resumo_ia && p.resumo_assinatura ? { linhas: p.resumo_ia, assinatura: p.resumo_assinatura } : null,
         },
       ),
@@ -174,10 +183,20 @@ async function apagarConclusao(tx: Consultor, codigo: string, autor: string) {
   if (apagadas.length) await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_reaberto", detalhe: {}, autor }]);
 }
 
-/** Apaga a conclusão do dono que deixou de valer; senão ela voltaria sozinha quando as NCs fossem corrigidas de novo. */
+async function apagarArquivo(tx: Consultor, codigo: string, autor: string) {
+  const apagados = await tx.consulta(
+    "UPDATE pacotes SET arquivado_em = NULL, arquivado_ncs = '[]'::jsonb WHERE codigo = $1 AND arquivado_em IS NOT NULL RETURNING codigo",
+    [codigo],
+  );
+  if (apagados.length) await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_desarquivado", detalhe: {}, autor }]);
+}
+
+/** Apaga a conclusão e o arquivo do dono que deixaram de valer; senão voltariam sozinhos quando as NCs mudassem de novo. */
 async function derrubarConclusoes(tx: Consultor, codigos: string[], autor: string) {
-  for (const p of await visoes(tx, "WHERE concluido_em IS NOT NULL AND codigo = ANY($1::text[])", [codigos]))
+  for (const p of await visoes(tx, "WHERE (concluido_em IS NOT NULL OR arquivado_em IS NOT NULL) AND codigo = ANY($1::text[])", [codigos])) {
     if (p.coluna !== "concluido") await apagarConclusao(tx, p.codigo, autor);
+    if (!p.arquivadoEm) await apagarArquivo(tx, p.codigo, autor);
+  }
 }
 
 /** Conclusão dada pelo dono; só de um pacote em Corrigido. */
@@ -186,7 +205,7 @@ export async function concluir(banco: Banco, codigo: string): Promise<PacoteVisa
     await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
     const p = await buscarPacote(tx, codigo);
     if (p.coluna !== "corrigido") throw new ErroHttp(409, "Só um pacote em Corrigido pode ser concluído. Atualize a página.");
-    await tx.consulta("UPDATE pacotes SET concluido_em = now(), concluido_ncs = $2::text::jsonb WHERE codigo = $1", [
+    await tx.consulta("UPDATE pacotes SET concluido_em = now(), concluido_ncs = $2::text::jsonb, urgente = false WHERE codigo = $1", [
       codigo,
       JSON.stringify(p.ncs.map((n) => n.id)),
     ]);
@@ -201,6 +220,70 @@ export const reabrir = (banco: Banco, codigo: string): Promise<PacoteVisao> =>
     await apagarConclusao(tx, codigo, AUTOR_DONO);
     return buscarPacote(tx, codigo);
   });
+
+/** Urgência dada pelo dono; o mesmo valor não gera evento. */
+export async function definirUrgencia(banco: Banco, codigo: string, urgente: boolean): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    const [l] = await tx.consulta<{ urgente: boolean }>("SELECT urgente FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const p = await buscarPacote(tx, codigo);
+    if (urgente && (p.arquivadoEm || p.coluna === "concluido"))
+      throw new ErroHttp(409, "Card arquivado ou concluído não pode ser urgente. Atualize a página.");
+    if (l.urgente !== urgente) {
+      await tx.consulta("UPDATE pacotes SET urgente = $2 WHERE codigo = $1", [codigo, urgente]);
+      await gravarEventos(tx, [{ codigo, idNc: null, tipo: urgente ? "pacote_urgente" : "pacote_nao_urgente", detalhe: {}, autor: AUTOR_DONO }]);
+    }
+    return buscarPacote(tx, codigo);
+  });
+}
+
+/** Arquivo do card pelo dono (specs/005); cobre as NCs visíveis agora e tira a urgência. */
+export async function arquivar(banco: Banco, codigo: string): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const p = await buscarPacote(tx, codigo);
+    if (p.arquivadoEm) throw new ErroHttp(409, "O card já está arquivado. Atualize a página.");
+    if (!p.ncs.length) throw new ErroHttp(409, "O card não tem NC pendente para arquivar.");
+    await tx.consulta("UPDATE pacotes SET arquivado_em = now(), arquivado_ncs = $2::text::jsonb, urgente = false WHERE codigo = $1", [
+      codigo,
+      JSON.stringify(p.ncs.map((n) => n.id)),
+    ]);
+    await gravarEventos(tx, [{ codigo, idNc: null, tipo: "pacote_arquivado", detalhe: {}, autor: AUTOR_DONO }]);
+    return buscarPacote(tx, codigo);
+  });
+}
+
+/** Desarquiva o card e as NCs dele, para que ele volte de fato ao kanban. */
+export async function desarquivar(banco: Banco, codigo: string): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    if (!(await buscarPacote(tx, codigo)).arquivadoEm) throw new ErroHttp(409, "O card não está arquivado. Atualize a página.");
+    await apagarArquivo(tx, codigo, AUTOR_DONO);
+    const soltas = await tx.consulta<{ id: string }>(
+      "UPDATE ncs SET arquivada_em = NULL WHERE codigo_pacote = $1 AND arquivada_em IS NOT NULL RETURNING id",
+      [codigo],
+    );
+    await gravarEventos(tx, soltas.map((n) => ({ codigo, idNc: n.id, tipo: "nc_desarquivada", detalhe: {}, autor: AUTOR_DONO })));
+    return buscarPacote(tx, codigo);
+  });
+}
+
+/** Arquivo de uma NC pelo dono: 404 se ela não é do pacote, 409 se não está no estado esperado. */
+async function mudarArquivoNc(banco: Banco, codigo: string, id: string, arquivando: boolean): Promise<PacoteVisao> {
+  return banco.transacao(async (tx) => {
+    await tx.consulta("SELECT 1 FROM pacotes WHERE codigo = $1 FOR UPDATE", [codigo]);
+    const p = await buscarPacote(tx, codigo);
+    if (!(await tx.consulta("SELECT 1 FROM ncs WHERE id = $1 AND codigo_pacote = $2", [id, codigo])).length)
+      throw new ErroHttp(404, "NC não encontrada neste pacote.");
+    if (!(arquivando ? p.ncs : p.arquivadas).some((n) => n.id === id))
+      throw new ErroHttp(409, arquivando ? "Só uma NC pendente do card pode ser arquivada." : "A NC não está arquivada. Atualize a página.");
+    await tx.consulta(`UPDATE ncs SET arquivada_em = ${arquivando ? "now()" : "NULL"} WHERE id = $1`, [id]);
+    await gravarEventos(tx, [{ codigo, idNc: id, tipo: arquivando ? "nc_arquivada" : "nc_desarquivada", detalhe: {}, autor: AUTOR_DONO }]);
+    await derrubarConclusoes(tx, [codigo], AUTOR_DONO);
+    return buscarPacote(tx, codigo);
+  });
+}
+export const arquivarNc = (banco: Banco, codigo: string, id: string) => mudarArquivoNc(banco, codigo, id, true);
+export const desarquivarNc = (banco: Banco, codigo: string, id: string) => mudarArquivoNc(banco, codigo, id, false);
 
 /** Mudança da equipe nas marcações: só gera evento para as linhas que de fato mudaram. */
 async function mudarMarcacoes(banco: Banco, codigo: string, autor: string, tipo: string, sql: string, params: unknown[]) {
