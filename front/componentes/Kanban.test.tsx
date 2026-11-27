@@ -203,3 +203,31 @@ describe("<Kanban/>", () => {
     });
   });
 });
+
+describe("<Kanban/> revisão da 006", () => {
+  it("lembra a busca ao voltar para a tela (R3)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => resposta(200, { pacotes }))); // um Response por carga
+    const { unmount } = abrir();
+    fireEvent.change(await screen.findByRole("searchbox", { name: "Buscar no kanban" }), { target: { value: "bloco 2" } });
+    unmount();
+    abrir();
+    expect(((await screen.findByRole("searchbox", { name: "Buscar no kanban" })) as HTMLInputElement).value).toBe("bloco 2");
+    expect(screen.queryByRole("article", { name: "Pacote 100001" })).toBeNull();
+  });
+
+  it("trava a tela com um círculo enquanto grava e solta depois (R4)", async () => {
+    localStorage.setItem("nc-nome", "Ana");
+    let gravar!: (r: Response) => void;
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(resposta(200, { pacotes: [pacoteVisao()] }))
+      .mockReturnValueOnce(new Promise<Response>((r) => (gravar = r)));
+    vi.stubGlobal("fetch", f);
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Mover para Corrigido" }));
+    expect((await screen.findByRole("status")).textContent).toMatch(/Gravando/);
+    gravar(resposta(200, { pacote: pacoteVisao({ coluna: "corrigido" }) }));
+    expect(await screen.findByRole("region", { name: "Corrigido (1)" })).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

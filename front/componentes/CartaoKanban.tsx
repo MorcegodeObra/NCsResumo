@@ -5,6 +5,7 @@ import { NOME_COLUNA } from "./CartaoPacote";
 import { definirUrgencia } from "@/front/lib/api";
 import { movimento } from "@/front/lib/mover";
 import { useAcao } from "@/front/lib/useAcao";
+import Trava from "./Trava";
 import type { PacoteVisao, Papel } from "@/compartilhado/dominio/tipos";
 
 interface Props {
@@ -67,7 +68,7 @@ export default function CartaoKanban({ p, papel, onMudou, onArrastar }: Props) {
           </button>
         )}
       </div>
-      {ocupado && <p className="cinza" aria-live="polite">Aguarde…</p>}
+      <Trava ativa={ocupado} />
       {erro && <p role="alert" className="erro">{erro}</p>}
     </article>
   );

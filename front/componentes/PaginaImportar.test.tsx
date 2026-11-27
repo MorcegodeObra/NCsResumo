@@ -26,7 +26,11 @@ describe("<PaginaImportar/>", () => {
     vi.stubGlobal("fetch", f);
     abrir();
     escolher();
-    expect(await screen.findByText(/2 pacotes \(2 novos, 0 saíram, 0 voltaram\), 14 NCs \(14 novas, 0 mudaram de situação\)/)).toBeTruthy();
+    expect(await screen.findByText("Importação gravada.")).toBeTruthy();
+    expect(screen.getAllByRole("listitem").slice(-2).map((li) => li.textContent)).toEqual([
+      " 2 pacotes2 novos · 0 saíram · 0 voltaram",
+      " 14 NCs14 novas · 0 mudaram de situação",
+    ]);
     expect(screen.getByRole("link", { name: /Ver o kanban/ }).getAttribute("href")).toBe("/");
     const corpo = JSON.parse(f.mock.calls[0][1].body);
     expect(f.mock.calls[0][0]).toBe("/api/importacoes");

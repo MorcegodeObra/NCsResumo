@@ -8,6 +8,7 @@ import { ajustar, arquivar, arquivarNc, definirCategoria, definirResolucao, defi
 import { movimento } from "@/front/lib/mover";
 import { exigirNome } from "@/front/lib/nome";
 import { useAcao } from "@/front/lib/useAcao";
+import Trava from "./Trava";
 import { NOME_ORIGEM } from "@/compartilhado/dominio/agrupar";
 import { dataBR } from "@/compartilhado/dominio/datas";
 import { idsAbertas, type AjustesPacote, type Categoria, type NCVisao, type PacoteVisao, type Papel } from "@/compartilhado/dominio/tipos";
@@ -141,7 +142,7 @@ export default function Ficha({ p, papel = "equipe", onMudou, onExcluido }: Prop
           </button>
         )}
       </div>
-      {ocupado && <p className="cinza no-print" aria-live="polite">Aguarde…</p>}
+      <Trava ativa={ocupado} />
       {erro && <p role="alert" className="erro no-print">{erro}</p>}
       {editando && (
         <div className="no-print">

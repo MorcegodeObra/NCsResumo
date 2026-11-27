@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FileSpreadsheet, LoaderCircle } from "lucide-react";
 import { lerPlanilha } from "@/front/planilha/ler";
 import { importar } from "@/front/planilha/importar";
 import type { CargaImportacao } from "@/compartilhado/dominio/tipos";
@@ -28,9 +29,18 @@ export default function Importar({ onLido, ocupado }: { onLido: (c: CargaImporta
 
   return (
     <div className="importar">
-      <label htmlFor="planilha">Planilha de inspeções (.xlsx)</label>
-      <input id="planilha" type="file" accept=".xlsx" onChange={escolher} disabled={lendo || ocupado} />
-      {lendo && <p className="cinza" aria-live="polite">Lendo a planilha…</p>}
+      {/* O campo fica escondido atrás do rótulo grande, mas segue focável pelo teclado. */}
+      <input id="planilha" className="escondido" type="file" accept=".xlsx" onChange={escolher} disabled={lendo || ocupado} />
+      <label htmlFor="planilha" className="escolher">
+        <FileSpreadsheet aria-hidden size={36} />
+        <strong>Escolher a planilha</strong>
+        <small>Planilha de inspeções (.xlsx)</small>
+      </label>
+      {lendo && (
+        <p className="cinza andamento" aria-live="polite">
+          <LoaderCircle aria-hidden size={18} className="girando" /> Lendo a planilha…
+        </p>
+      )}
       {erro && <p role="alert" className="erro">{erro}</p>}
     </div>
   );

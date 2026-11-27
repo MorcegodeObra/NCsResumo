@@ -51,14 +51,32 @@ button, input, textarea { font: inherit; }
 
 /* Barra de ações e importação */
 .barra { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0 16px; }
-.importar { display:flex; flex-direction:column; gap:4px; }
-.importar label { font-size:13px; font-weight:700; }
-.importar input { max-width:100%; }
+.importar { display:flex; flex-direction:column; gap:8px; margin:16px 0; }
+.escondido { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.escolher { display:flex; flex-direction:column; align-items:center; gap:4px; padding:24px 16px; border:2px dashed var(--azul-t); border-radius:12px; background:#fff; color:var(--escuro); text-align:center; cursor:pointer; transition:background .12s; }
+.escolher:hover, .escondido:focus-visible + .escolher { background:#eef4fb; }
+.escondido:focus-visible + .escolher { outline:3px solid var(--azul-t); outline-offset:2px; }
+.escondido:disabled + .escolher { opacity:.5; cursor:default; }
+.escolher small { color:var(--cinza); }
+.andamento { display:flex; align-items:center; gap:8px; }
+.resultado { display:flex; flex-direction:column; gap:10px; align-items:flex-start; padding:14px 16px; background:#fff; border:1px solid var(--borda); border-left:5px solid #2e7d32; border-radius:10px; }
+.resultado .ok { display:flex; align-items:center; gap:6px; margin:0; color:#2e7d32; }
+.contagens { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:10px 24px; }
+.contagens li { display:grid; grid-template-columns:auto auto 1fr; align-items:center; gap:0 6px; }
+.contagens li svg { color:var(--azul-t); }
+.contagens small { grid-column:2 / 4; color:var(--cinza); }
+/* Trava da tela durante a gravação (specs/006 R4) */
+.trava { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:#fff9; color:var(--escuro); font-weight:700; cursor:progress; }
+.girando { animation:girar .8s linear infinite; }
+@keyframes girar { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .girando { animation-duration:2.4s; } }
 .campo { display:flex; flex-direction:column; gap:4px; flex:1 1 260px; min-width:0; }
 .campo label { font-size:13px; font-weight:700; }
 .campo input { width:100%; padding:9px 10px; border:1px solid #767676; border-radius:8px; }
 .passos { max-width:640px; }
-.passos li { margin:4px 0; line-height:1.45; }
+.passos ol { list-style:none; padding:0; display:flex; flex-direction:column; gap:10px; }
+.passos li { display:flex; align-items:center; gap:10px; line-height:1.45; }
+.numero { flex:none; display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--azul); color:var(--azul-t); }
 
 /* Quadro: cabe na tela, só as colunas rolam; no celular, uma coluna por vez (abas) */
 .pagina-kanban { display:flex; flex-direction:column; gap:10px; height:calc(100dvh - 32px); }

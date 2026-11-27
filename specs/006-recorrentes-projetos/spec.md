@@ -17,6 +17,22 @@
     mexe nela: NC nova num card recorrente o mantém em Recorrentes.
   - As NCs continuam sendo marcadas como sempre, e o card continua podendo ir para Corrigido e Concluído.
 
+## Revisão (27/11/2026, pedido do dono)
+
+- **R3 Busca lembrada**: o texto da busca do kanban e de `/cards` fica guardado no navegador (cada tela o seu).
+  Ao voltar de uma ficha ou recarregar a página, a busca continua lá. Nada sai do aparelho.
+- **R4 Tela travada durante a gravação**: enquanto uma mudança de card grava (mover, urgência, categoria,
+  marcar NC, arquivar, desarquivar…), a tela fica meio opaca com um círculo girando e não aceita clique.
+  Some quando a gravação termina, com sucesso ou erro.
+- **R5 Importação didática**: os passos ganham ícones, o campo de arquivo vira um botão grande com ícone, e o
+  resultado mostra as contagens em itens com ícone. Os textos e o fluxo continuam os mesmos.
+- **R6 Botões padrão**: as ações de navegação ("Voltar", "Ver o kanban", "Importar a planilha") são botões, não
+  link de texto azul.
+- **R7 Voltar de verdade**: o Voltar da ficha volta para a tela de onde a pessoa veio (kanban, cards, tabela,
+  arquivo). Se a ficha foi aberta direto pelo endereço, vai para o kanban.
+
+Fora desta revisão: a modularização com POO e SOLID (back e front) fica para a spec 007.
+
 ## Contratos que mudam
 
 - **API**: `PUT /api/pacotes/:codigo/categoria` (equipe e dono), corpo `{ autor, categoria: "recorrente" | "projeto" | null }`.

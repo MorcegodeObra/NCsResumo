@@ -9,7 +9,7 @@ A especificação está em `specs/001-mvp-planilha-kanban/`, `specs/002-paginas-
 
 - **Kanban** (`/`): quadro que cabe na tela, com o local e o serviço de cada card; clicar abre a ficha, e arrastar ou o botão move. Cada coluna mostra os 10 cards mais recentes, com os urgentes no topo, e **Ver mais** traz mais 10; a busca procura em todos. No celular, uma coluna por vez, em abas. Só o dono vê Concluído.
   As colunas **Recorrentes** e **Projetos** guardam os cards com essa categoria; arrastar para lá dá a categoria, e arrastar de volta para a coluna da situação tira.
-- **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com a possível resolução (até 3 linhas na tela), selo de categoria, busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1").
+- **Cards** (`/cards`): cards de Aberto e Corrigido em tamanho fixo, com a possível resolução (até 3 linhas na tela), selo de categoria, busca, exportação e **Resumir todos**. A busca aceita vários termos em qualquer ordem (ex.: "alvenaria bloco 1"). A busca do kanban e a de Cards ficam guardadas no aparelho: voltar de uma ficha ou recarregar não as apaga. Enquanto uma mudança grava, a tela fica travada com um círculo girando; o Voltar da ficha volta para a tela de onde se veio.
 - **Ficha** (`/cards/<código>`): tudo de um pacote numa página: NCs, marcação, edição, possível resolução, histórico, impressão, IA, conclusão e exclusão.
 - **Tabela** (`/tabela`, só o dono): abertos, corrigidos e concluídos.
 - **Arquivo** (`/arquivo`, só o dono): cards e NCs que não vão ser resolvidos, com **Desarquivar**.

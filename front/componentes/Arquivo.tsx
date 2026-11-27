@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePapel } from "./Moldura";
 import { desarquivar, desarquivarNc } from "@/front/lib/api";
 import { useAcao } from "@/front/lib/useAcao";
+import Trava from "./Trava";
 import { usePacotes } from "@/front/lib/usePacotes";
 import { dataBR } from "@/compartilhado/dominio/datas";
 import type { PacoteVisao } from "@/compartilhado/dominio/tipos";
@@ -21,6 +22,7 @@ export default function Arquivo() {
   const local = (p: PacoteVisao) => <Link href={`/cards/${p.codigo}`}>{p.bloco} · {p.pavimento} — {p.tarefa}</Link>;
   return (
     <div className="arquivo" aria-busy={acao.ocupado}>
+      <Trava ativa={acao.ocupado} />
       {acao.erro && <p role="alert" className="erro">{acao.erro}</p>}
       <section aria-labelledby="arq-cards">
         <h2 id="arq-cards">Cards arquivados ({cards.length})</h2>

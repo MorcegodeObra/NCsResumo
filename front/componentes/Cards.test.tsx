@@ -62,3 +62,15 @@ describe("<Cards/>", () => {
     expect(screen.getByText("IA")).toBeTruthy();
   });
 });
+
+describe("<Cards/> revisão da 006", () => {
+  it("lembra a busca ao voltar para a tela (R3)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => resposta(200, { pacotes }))); // um Response por carga
+    const { unmount } = abrir();
+    fireEvent.change(await screen.findByLabelText(/Buscar/), { target: { value: "reboco" } });
+    unmount();
+    abrir();
+    expect(((await screen.findByLabelText(/Buscar/)) as HTMLInputElement).value).toBe("reboco");
+    expect(cards()).toEqual(["Pacote 100002"]);
+  });
+});

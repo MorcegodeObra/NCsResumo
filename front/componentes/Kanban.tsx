@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, FileUp, Search } from "lucide-react";
 import CartaoKanban from "./CartaoKanban";
 import { NOME_COLUNA } from "./CartaoPacote";
 import { usePapel } from "./Moldura";
@@ -11,6 +11,8 @@ import { movimento } from "@/front/lib/mover";
 import { exigirNome } from "@/front/lib/nome";
 import { useAcao } from "@/front/lib/useAcao";
 import { usePacotes } from "@/front/lib/usePacotes";
+import { useBusca } from "@/front/lib/useBusca";
+import Trava from "./Trava";
 import type { Categoria, Coluna, PacoteVisao, Papel } from "@/compartilhado/dominio/tipos";
 
 /** Colunas do quadro: as situações e, entre Corrigido e Concluído, as categorias (specs/006). */
@@ -37,7 +39,7 @@ export default function Kanban() {
   const { pacotes: todos, erro, trocar } = usePacotes();
   const soltar = useAcao();
   const [arrastado, setArrastado] = useState<PacoteVisao | null>(null);
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useBusca("kanban");
   const [mostrar, setMostrar] = useState<Partial<Record<ColunaQuadro, number>>>({});
   const [aba, setAba] = useState<ColunaQuadro>("aberto"); // no celular, uma coluna por vez
   if (erro) return <p role="alert" className="erro">{erro}</p>;
@@ -46,7 +48,10 @@ export default function Kanban() {
   if (!todos.length)
     return (
       <p>
-        Não há fichas no quadro. <Link href="/importar">Importar a planilha</Link>
+        Não há fichas no quadro.{" "}
+        <Link href="/importar" className="botao destaque">
+          <FileUp aria-hidden size={16} /> Importar a planilha
+        </Link>
       </p>
     );
   const colunas: ColunaQuadro[] = ["aberto", "corrigido", "recorrente", "projeto", ...(papel === "dono" ? (["concluido"] as const) : [])];
@@ -65,7 +70,7 @@ export default function Kanban() {
             </button>
           ))}
         </div>
-        {soltar.ocupado && <p className="cinza" aria-live="polite">Movendo…</p>}
+        <Trava ativa={soltar.ocupado} />
         {soltar.erro && <p role="alert" className="erro">{soltar.erro}</p>}
       </div>
       <div className="kanban">

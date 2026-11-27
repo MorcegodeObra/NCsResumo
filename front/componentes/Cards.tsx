@@ -6,11 +6,12 @@ import { usePapel } from "./Moldura";
 import { buscar } from "@/front/lib/buscar";
 import { resumirFila } from "@/front/lib/resumirFila";
 import { usePacotes } from "@/front/lib/usePacotes";
+import { useBusca } from "@/front/lib/useBusca";
 
 export default function Cards() {
   const papel = usePapel();
   const { pacotes, erro, trocar } = usePacotes();
-  const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useBusca("cards");
   const [progresso, setProgresso] = useState("");
   const [aviso, setAviso] = useState("");
 
